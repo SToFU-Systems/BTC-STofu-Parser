@@ -3,41 +3,45 @@
 
 // Project headers
 #include "Config.h"
+#include "Logger.hpp"
 #include "Utils.h"
 
 
 //================================================================================
 // Method: init
 // Description: Initializes the Config object. Handles command-line arguments,
-//              loads JSON configuration, and extracts data from it.
+//              loads JSON configuration, and extracts data from it. Returns 
+//              AppErrorCode indicating success or the first error encountered.
 //================================================================================
-bool Config::init(IN int argc, IN wchar_t* argv[])
+AppErrorCode Config::init(IN int argc, IN wchar_t* argv[])
 {
     // Handle command arguments
-    const bool kHandlerResult = handleCommandArguments(argc, argv);
-    if (!kHandlerResult)
-        return false;
+    const AppErrorCode kHandlerResult = handleCommandArguments(argc, argv);
+    RETURN_IF_FAILED(kHandlerResult);
 
     // Json
     std::ifstream jsonFile(argv[1]);
     nlohmann::json jsonData = nlohmann::json::parse(jsonFile);
     
     // Get Block Directory
-    const bool kBlockParseResult = parseBlockDirectory(jsonData);
-    if (!kBlockParseResult)
-        return false;
+    const AppErrorCode kBlockParseResult = parseBlockDirectory(jsonData);
+    RETURN_IF_FAILED(kBlockParseResult);
 
     // Get Xor Directory
-    const bool kXorParseResult = parseXorDirectory(jsonData);
-    if (!kXorParseResult)
-        return false;
+    const AppErrorCode kXorParseResult = parseXorDirectory(jsonData);
+    RETURN_IF_FAILED(kXorParseResult);
 
-    return true;
+    // Get Output Directory
+    const AppErrorCode kOutputParseResult = parseOutputDirectory(jsonData);
+    RETURN_IF_FAILED(kOutputParseResult);
+
+    LOG_INFO("Successfully initialized config data.");
+    return AppErrorCode::Success;
 }
 
 //================================================================================
 // Method: getBlockPath
-// Description: Returns the configured block directory path.
+// Description: Returns the configured block directory path as wide string.
 //================================================================================
 std::wstring Config::getBlockPath() const noexcept
 {
@@ -46,7 +50,7 @@ std::wstring Config::getBlockPath() const noexcept
 
 //================================================================================
 // Method: getXorPath
-// Description: Returns the configured XOR directory path.
+// Description: Returns the configured XOR directory path as wide string.
 //================================================================================
 std::wstring Config::getXorPath() const noexcept
 {
@@ -54,113 +58,151 @@ std::wstring Config::getXorPath() const noexcept
 }
 
 //================================================================================
+// Method: getOutputPath
+// Description: Returns the configured output directory path as wide string.
+//================================================================================
+std::wstring Config::getOutputPath() const noexcept
+{
+    return m_outputDirectoryPath;
+}
+
+//================================================================================
 // Method: setBlockPath
 // Description: Checks and sets the block directory path to the provided value.
 //================================================================================
-bool Config::setBlockPath(IN const std::wstring& newPath)
+AppErrorCode Config::setBlockPath(IN const std::wstring& newPath)
 {
     if (!std::filesystem::exists(newPath))
     {
-        std::cout << "Couldn't set Block path. Directory is not found.\n";
-        return false;
+        LOG_ERROR("Failed to set {} as block directory path", newPath);
+        return AppErrorCode::DirectoryNotFound;
     }
 
     m_blockDirectoryPath = newPath;
-    return true;
+    return AppErrorCode::Success;
 }
 
 //================================================================================
 // Method: setXorPath
 // Description: Checks and sets the XOR path to the provided value.
 //================================================================================
-bool Config::setXorPath(IN const std::wstring& newPath)
+AppErrorCode Config::setXorPath(IN const std::wstring& newPath)
 {
     if (!std::filesystem::exists(newPath))
     {
-        std::cout << "Couldn't set Xor path. Directory is not found.\n";
-        return false;
+        LOG_ERROR("Failed to set {} as XOR directory path", newPath);
+        return AppErrorCode::DirectoryNotFound;
     }
 
     m_xorDirectoryPath = newPath;
-    return true;
+    return AppErrorCode::Success;
+}
+
+//================================================================================
+// Method: setOutputPath
+// Description: Sets the output path to the provided value.
+//================================================================================
+AppErrorCode Config::setOutputPath(IN const std::wstring& newPath)
+{
+    if (!std::filesystem::exists(newPath))
+    {
+        LOG_ERROR("Failed to set {} as output directory path", newPath);
+        return AppErrorCode::DirectoryNotFound;
+    }
+
+    m_outputDirectoryPath = newPath;
+    return AppErrorCode::Success;
 }
 
 //================================================================================
 // Method: handleCommandArguments
 // Description: Validates command-line arguments. Ensures JSON file path is passed
-//              and it exists on disk.
+//              and it exists on disk. Returns Success on valid input or an error 
+//              code otherwise.
 //================================================================================
-bool Config::handleCommandArguments(IN int argc, IN wchar_t* argv[]) const
+AppErrorCode Config::handleCommandArguments(IN int argc, IN wchar_t* argv[]) const
 {
-    if (argc != 2)
+    constexpr size_t kExpectedArgumentsNum = 2;
+
+    if (argc != kExpectedArgumentsNum)
     {
-        std::cout << "Incorrect command arguments. Usage: <json_path>\n";
-        return false;
+        LOG_ERROR("Incorrect number of command arguments. Expected: {}, but received: {}", kExpectedArgumentsNum, argc);
+        return AppErrorCode::CommandArgumentsError;
     }
 
     if (!std::filesystem::exists(argv[1]))
     {
-        std::cout << "Json not found\n";
-        return false;
+        LOG_ERROR("Config file not found.");
+        return AppErrorCode::FileNotFound;
     }
 
-    return true;
+    return AppErrorCode::Success;
 }
 
 //================================================================================
 // Method: parseBlockDirectory
 // Description: Reads the Block Directory key from the given JSON, validates that
 //              a non-empty wide string was parsed, and applies it via setBlockPath.
-//              Returns false if the key is missing/invalid or if applying the path
-//              fails; otherwise returns true.
+//              Returns Success if applied or the specific error from parsing or
+//              validation if unsuccessful.
 //================================================================================
-bool Config::parseBlockDirectory(IN const nlohmann::json& json)
+AppErrorCode Config::parseBlockDirectory(IN const nlohmann::json& json)
 {
     constexpr const char* kBlockDirectoryJsonKey = "BlockDirectory";
 
     const auto kParsedBlockDirectory = parseWstringFromJson(json, kBlockDirectoryJsonKey);
-    if (!kParsedBlockDirectory.has_value())
-        return false;
+    RETURN_ERROR_CODE_IF_UNEXPECTED(kParsedBlockDirectory);
 
-    const bool kSetBlockResult = setBlockPath(kParsedBlockDirectory.value());
-    if (!kSetBlockResult)
-        return false;
-
-    return true;
+    return setBlockPath(kParsedBlockDirectory.value());
 }
 
 //================================================================================
 // Method: parseXorDirectory
 // Description: Reads the Xor Directory key from the given JSON, validates that
 //              a non-empty wide string was parsed, and applies it via setXorPath.
-//              Returns false if the key is missing/invalid or if applying the path
-//              fails; otherwise returns true.
+//              Returns Success if applied or the specific error from parsing or
+//              validation if unsuccessful.
 //================================================================================
-bool Config::parseXorDirectory(IN const nlohmann::json& json)
+AppErrorCode Config::parseXorDirectory(IN const nlohmann::json& json)
 {
     constexpr const char* kXorDirectoryJsonKey = "XorDirectory";
 
     const auto kParsedXorDirectory = parseWstringFromJson(json, kXorDirectoryJsonKey);
-    if (!kParsedXorDirectory.has_value())
-        return false;
+    RETURN_ERROR_CODE_IF_UNEXPECTED(kParsedXorDirectory);
 
-    const bool kSetXorResult = setXorPath(kParsedXorDirectory.value());
-    if (!kSetXorResult)
-        return false;
+    return setXorPath(kParsedXorDirectory.value());
+}
 
-    return true;
+//================================================================================
+// Method: parseOutputDirectory
+// Description: Reads the Output Directory key from the given JSON, validates that
+//              a non-empty wide string was parsed, and applies it via setOutputPath.
+//              Returns false if the key is missing/invalid or if applying the path
+//              fails; otherwise returns true.
+//================================================================================
+AppErrorCode Config::parseOutputDirectory(IN const nlohmann::json& json)
+{
+    constexpr const char* kOutputDirectoryJsonKey = "OutputDirectory";
+
+    const auto kParsedOutputDirectory = parseWstringFromJson(json, kOutputDirectoryJsonKey);
+    RETURN_ERROR_CODE_IF_UNEXPECTED(kParsedOutputDirectory);
+
+    return setOutputPath(kParsedOutputDirectory.value());
 }
 
 //================================================================================
 // Method: parseWstringFromJson
 // Description: Attempts to parse a wide string from a JSON object by key.
-//              Returns nullopt if the key is missing.
+//              Returns the converted value on success or AppErrorCode on failure.
 //================================================================================
-std::optional<std::wstring> Config::parseWstringFromJson(IN const nlohmann::json& json, IN const std::string& jsonKey) const
+std::expected<std::wstring, AppErrorCode> Config::parseWstringFromJson(
+    IN const nlohmann::json& json, 
+    IN const std::string& jsonKey
+) const
 {
     const bool kIsKeyPresent = isJsonKeyPresent(json, jsonKey);
     if (!kIsKeyPresent)
-        return std::nullopt;
+        return std::unexpected(AppErrorCode::JsonKeyNotFound);
 
     std::string kParsedString = json[jsonKey].get<std::string>();
     return stringUtf8ToWide(kParsedString);
@@ -168,14 +210,14 @@ std::optional<std::wstring> Config::parseWstringFromJson(IN const nlohmann::json
 
 //================================================================================
 // Method: isJsonKeyPresent
-// Description: Checks if the given key exists in the JSON object. Logs an error
-//              message if not found.
+// Description: Checks if the given key exists in the JSON object. Returns true 
+//              if present, false otherwise.
 //================================================================================
 bool Config::isJsonKeyPresent(IN const nlohmann::json& json, IN const std::string& jsonKey) const
 {
     if (!json.contains(jsonKey))
     {
-        std::cout << "Couldn't find " << jsonKey << " key in JSON.\n";
+        LOG_ERROR("Couldn't find {} key in JSON", jsonKey);
         return false;
     }
 

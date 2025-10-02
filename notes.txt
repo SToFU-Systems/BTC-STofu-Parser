@@ -1,0 +1,16 @@
+* Usage:
+- RELEASE x64 ONLY. Unless you remove pqxx library, then you can also use Debug x64. Sorry for inconvenience.
+- Args: <path to config.json>. Already set up in vs as "resources/config.json". 
+- Same config is in the src/btc-parser. I was asked to add it here.
+- Input bitcoin block/s in "{project-folder}/resources/blocks/"
+- Output json file/s (hardcoded to be json) in "{project-folder}/output/"
+
+Important things unfinished:
+- Remove build options excepct for Release x64.
+- Db functional is only done for Transaction. Not sure if you would be assigned on it, but there is also another one.
+- Separate files by folders. For now only db is separated into "database" folder.
+- Sorry for src/bit-parcer as well as .sln in the same folder. I did it by mistake and haven't yet got a chance to fix it.
+
+Bugs:
+- Transaction hash is wrong if transaction has witness. Reason: hash should be generated with all transaction data, except for sigwit flag and witness (check bitcoin block wiki for reference: https://en.bitcoin.it/wiki/Transaction) 
+- Functional uses a lot of copies as well as parsed blocks themselves are not small, which leads to a lot of memory usage in runtime.

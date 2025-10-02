@@ -1,8 +1,9 @@
-﻿// Precompiled headers
+// Precompiled headers
 #include "pch.h"
 
 // Project headers
 #include "FileReader.h"
+#include "Logger.hpp"
 
 
 //================================================================================
@@ -51,18 +52,25 @@ bool FileReader::readBytes(IN const size_t bytes, OUT std::vector<uint8_t>& out)
     out.shrink_to_fit();
     m_file.read(reinterpret_cast<char*>(out.data()), bytes);
 
-    const auto readCount = m_file.gcount();
-    if (readCount == bytes)
+    if (!m_file.good())
+    {
+        LOG_ERROR("File reading failure.");
+        return false;
+    }
+
+    const auto kActualRead = m_file.gcount();
+    if (kActualRead == bytes)
         return true;
 
     const bool kIsEof = m_file.eof();
     if (kIsEof)
     {
-        out.resize(readCount);
+        out.resize(kActualRead);
         std::vector<uint8_t>(out).swap(out);
         return true;
     }
 
+    LOG_ERROR("Failed to read {} bytes from file, instead read {}.", bytes, kActualRead);
     return false;
 }
 

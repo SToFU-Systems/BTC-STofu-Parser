@@ -1,9 +1,10 @@
 #pragma once
 
 // Standard Library headers
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <vector>
+#include <string>
 
 
 struct BlockHeader
@@ -23,13 +24,24 @@ struct TxIn
     // txin script length
     std::vector<uint8_t> m_scriptSignature;
     uint32_t m_sequenceNumber;
+
+    /* Not in the block, but important to have */
+    std::string m_inputAddress;
 };
 
 struct TxOut
 {
     uint64_t m_value;
     // script length
-    std::vector<uint8_t> m_scripts;
+    std::vector<uint8_t> m_scriptPubKey;
+
+    /* Not in the block, but important to have */
+    std::string m_outputAddress;
+};
+
+struct Witness
+{
+    std::vector<std::vector<uint8_t>> m_witnessData;
 };
 
 struct Transaction
@@ -40,7 +52,7 @@ struct Transaction
     std::vector<TxIn> m_vIn;
     // out-counter
     std::vector<TxOut> m_vOut;
-    std::vector<std::vector<uint8_t>> m_witnesses;
+    std::vector<Witness> m_witnesses;
     uint32_t m_lockTime;
 
     /* Not in the block, but important to have */
