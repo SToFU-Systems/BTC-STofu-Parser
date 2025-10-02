@@ -1,10 +1,10 @@
 #pragma once
 
 // Standard Library headers
-#include <cstdint>
-#include <vector>
 #include <array>
+#include <cstdint>
 #include <string>
+#include <vector>
 
 // Project headers
 #include "Common.h"
@@ -44,7 +44,7 @@
 // Description: Computes the double SHA-256 hash of the given input buffer and
 //              returns the result in reversed byte order.
 //================================================================================
-std::array<uint8_t, 32> getReversedDoubleSHA256(IN const std::vector<uint8_t>& inputBuffer);
+std::array<uint8_t, 32> getDoubleSHA256(IN const std::vector<uint8_t>& inputBuffer);
 
 
 //================================================================================
@@ -78,6 +78,13 @@ std::string toTime(IN const uint32_t time);
 // Description: Converts a UTF-8 encoded std::string into a UTF-16 std::wstring.
 //================================================================================
 std::wstring stringUtf8ToWide(IN const std::string& s);
+
+
+//================================================================================
+// Function: wideStringToUtf8
+// Description: Converts a wide Unicode string to a UTF8 encoded std::string.
+//================================================================================
+std::string wideStringToUtf8(IN std::wstring_view wideString);
 
 
 //================================================================================

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -97,10 +97,14 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)/;..\..\3rd-party\spdlog\include\;..\..\3rd-party\libpqxx\include\;..\..\3rd-party\PostgreSQL17\include\</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\3rd-party\spdlog\lib\$(Platform)\$(Configuration)\;..\..\3rd-party\libpqxx\lib;..\..\3rd-party\PostgreSQL17\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libpq.lib;pqxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -116,10 +120,14 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)/;..\..\3rd-party\spdlog\include\;..\..\3rd-party\libpqxx\include\;..\..\3rd-party\PostgreSQL17\include\</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\3rd-party\spdlog\lib\$(Platform)\$(Configuration)\;..\..\3rd-party\libpqxx\lib;..\..\3rd-party\PostgreSQL17\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libpq.lib;pqxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -133,10 +141,14 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)/;..\..\3rd-party\spdlog\include\;..\..\3rd-party\libpqxx\include\;..\..\3rd-party\PostgreSQL17\include\</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\3rd-party\spdlog\lib\$(Platform)\$(Configuration)\;..\..\3rd-party\libpqxx\lib;..\..\3rd-party\PostgreSQL17\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libpq.lib;pqxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -152,16 +164,27 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)/;..\..\3rd-party\spdlog\include\;..\..\3rd-party\libpqxx\include\;..\..\3rd-party\PostgreSQL17\include\</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\3rd-party\spdlog\lib\$(Platform)\$(Configuration)\;..\..\3rd-party\libpqxx\lib;..\..\3rd-party\PostgreSQL17\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libpq.lib;pqxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BlockParser.cpp" />
+    <ClCompile Include="BitcoinReader.cpp" />
+    <ClCompile Include="BlockFileParser.cpp" />
+    <ClCompile Include="BlockHeaderParser.cpp" />
+    <ClCompile Include="database\PostgreQueryCommands.cpp" />
+    <ClCompile Include="database\TransactionsDbPostgreSql.cpp" />
+    <ClCompile Include="JsonUtils.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="SingleBlockParser.cpp" />
     <ClCompile Include="Config.cpp" />
-    <ClCompile Include="ConsoleBlockPrinter.cpp" />
+    <ClCompile Include="BlockPrinter.cpp" />
     <ClCompile Include="FileReader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
@@ -170,16 +193,31 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TransactionParser.cpp" />
+    <ClCompile Include="TransactionScriptParser.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AppErrorCode.hpp" />
+    <ClInclude Include="BitcoinReader.h" />
+    <ClInclude Include="BlockFileParser.h" />
+    <ClInclude Include="BlockHeaderParser.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Config.h" />
-    <ClInclude Include="ConsoleBlockPrinter.h" />
+    <ClInclude Include="BlockPrinter.h" />
+    <ClInclude Include="database\IDatabase.h" />
+    <ClInclude Include="database\ITransactionDatabase.h" />
+    <ClInclude Include="database\PostgreQueryCommands.h" />
+    <ClInclude Include="database\TransactionsDbPostgreSql.h" />
     <ClInclude Include="DataTypes.h" />
     <ClInclude Include="FileReader.h" />
-    <ClInclude Include="BlockParser.h" />
+    <ClInclude Include="JsonUtils.h" />
+    <ClInclude Include="Logger.hpp" />
+    <ClInclude Include="LoggerUtils.h" />
+    <ClInclude Include="SingleBlockParser.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="TransactionParser.h" />
+    <ClInclude Include="TransactionScriptParser.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -189,6 +227,8 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="packages\openssl-vc140-static-32_64.1.1.1.1\build\native\openssl-vc140-static-32_64.targets" Condition="Exists('packages\openssl-vc140-static-32_64.1.1.1.1\build\native\openssl-vc140-static-32_64.targets')" />
     <Import Project="packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets" Condition="Exists('packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets')" />
+    <Import Project="packages\curl-vc140-static-32_64.7.53.0\build\native\curl-vc140-static-32_64.targets" Condition="Exists('packages\curl-vc140-static-32_64.7.53.0\build\native\curl-vc140-static-32_64.targets')" />
+    <Import Project="packages\boost.1.87.0\build\boost.targets" Condition="Exists('packages\boost.1.87.0\build\boost.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -196,5 +236,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\openssl-vc140-static-32_64.1.1.1.1\build\native\openssl-vc140-static-32_64.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl-vc140-static-32_64.1.1.1.1\build\native\openssl-vc140-static-32_64.targets'))" />
     <Error Condition="!Exists('packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets'))" />
+    <Error Condition="!Exists('packages\curl-vc140-static-32_64.7.53.0\build\native\curl-vc140-static-32_64.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\curl-vc140-static-32_64.7.53.0\build\native\curl-vc140-static-32_64.targets'))" />
+    <Error Condition="!Exists('packages\boost.1.87.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost.1.87.0\build\boost.targets'))" />
   </Target>
 </Project>

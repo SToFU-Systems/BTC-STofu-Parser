@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 // Standard Library headers
-#include <fstream>
 #include <cstdint>
+#include <fstream>
 #include <string>
 #include <vector>
 

@@ -1,0 +1,5 @@
+1) blk00000, blk00317 = from BTC Core, REQUIRE xor.dat for proper parsing
+2) blk_example - some random block from 2019, that has witness. IMPORTANT: don't use xor.dat
+
+- place block to parse inside "blocks" folder
+- xor.dat usage is in main.cpp (98): BitcoinReader reader(kBlockPath, kXorPath);

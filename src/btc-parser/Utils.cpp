@@ -109,7 +109,7 @@ bool leUint8ToInt32(IN const std::vector<uint8_t>& in, OUT int32_t& out)
 // Description: Computes the double SHA-256 hash of the given input buffer and
 //              returns the result in reversed byte order.
 //================================================================================
-std::array<uint8_t, 32> getReversedDoubleSHA256(IN const std::vector<uint8_t>& inputBuffer)
+std::array<uint8_t, 32> getDoubleSHA256(IN const std::vector<uint8_t>& inputBuffer)
 {
     const size_t kBufferSize = inputBuffer.size();
 
@@ -119,7 +119,6 @@ std::array<uint8_t, 32> getReversedDoubleSHA256(IN const std::vector<uint8_t>& i
     std::array<uint8_t, 32> finalHash;
     SHA256(firstHash.data(), sizeof(firstHash), finalHash.data());
 
-    std::reverse(finalHash.begin(), finalHash.end());
     return finalHash;
 }
 
@@ -191,6 +190,28 @@ std::wstring stringUtf8ToWide(IN const std::string& s)
         return std::wstring();
 
     return result;
+}
+
+//================================================================================
+// Function: wideStringToUtf8
+// Description: Converts a wide Unicode string to a UTF8 encoded std::string.
+//================================================================================
+std::string wideStringToUtf8(IN std::wstring_view wideString)
+{
+    if (wideString.empty())
+        return {};
+
+    // Get required UTF-8 buffer size
+    int utf8Length = WideCharToMultiByte(CP_UTF8, 0, wideString.data(), static_cast<int>(wideString.size()), nullptr, 0, nullptr, nullptr);
+
+    if (utf8Length == 0)
+        return {}; // error
+
+    // Allocate and perform conversion
+    std::string utf8(utf8Length, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wideString.data(), static_cast<int>(wideString.size()), utf8.data(), utf8Length, nullptr, nullptr);
+
+    return utf8;
 }
 
 //================================================================================

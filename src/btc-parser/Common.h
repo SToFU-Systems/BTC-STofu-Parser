@@ -12,11 +12,14 @@
 #define INOUT
 #endif // !INOUT
 
-enum class ReturnTypes
-{
-    SUCCESS = 0, // Operation completed successfully
-    COMMAND_ARGUMENTS_ERROR = -1, // Invalid or missing command-line arguments
-    BLOCK_PARSING_FAILURE = -2, // Failed to parse Bitcoin block or related data
-    RUNTIME_EXCEPTION = -3, // Unexpected runtime error occurred
-    EXCEPTION = -4, // Generic exception not covered by other codes
-};
+#define RETURN_IF_UNEXPECTED(expr) \
+    if(!expr.has_value()) \
+        return std::unexpected(expr.error());
+
+#define RETURN_ERROR_CODE_IF_UNEXPECTED(expr) \
+    if(!expr.has_value()) \
+        return expr.error();
+
+#define RETURN_IF_FAILED(expr) \
+    if(expr != AppErrorCode::Success) \
+        return expr;
