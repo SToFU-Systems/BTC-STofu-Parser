@@ -147,7 +147,7 @@ void BlockPrinter::printTxOut(IN const std::vector<TxOut>& txOut) const
 //================================================================================
 void BlockPrinter::printWitness(IN const std::vector<Witness>& witness) const
 {
-    for (size_t i = 0; i < witness.size(); ++i) 
+    for (size_t i = 0; i < witness.size(); ++i)
     {
         m_stream << "\n===Witness #" << i + 1 << "===\n";
         for (const auto& data : witness[i].m_witnessData)
