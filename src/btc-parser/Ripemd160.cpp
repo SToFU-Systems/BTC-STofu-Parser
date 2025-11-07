@@ -10,27 +10,33 @@
 #include <string>
 #include <vector>
 
-unsigned char* RIPEMD160::compute(const unsigned char* data, size_t len, unsigned char* out)
+
+uint8_t* RIPEMD160::compute(const uint8_t* data, const size_t len, uint8_t* out)
 {
-	if (!data || !out) return nullptr;
+	if (!data || !out)
+		return nullptr;
+
 	RIPEMD160 self;
-	// делаем хеш HEX-строкой и переводим в 20 сырых байт
+
 	std::string hex = self.message_digest(std::string(reinterpret_cast<const char*>(data), len));
+
 	for (size_t i = 0; i < 20; ++i) {
 		unsigned v = 0;
 		std::stringstream ss;
 		ss << std::hex << hex.substr(i * 2, 2);
 		ss >> v;
-		out[i] = static_cast<unsigned char>(v & 0xFF);
+		out[i] = static_cast<uint8_t>(v & 0xFF);
 	}
-	return out;
 
+	return out;
 }
 
-std::string RIPEMD160::message_digest(const std::string& message) {
-	std::vector<int64_t> state = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0 };
 
-	std::vector<uint8_t> bytes = add_padding(message);
+std::string RIPEMD160::message_digest(const std::string& message) 
+{
+	std::vector<int64_t> state = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0 };// для инициализации состояния хэш-функции
+
+	std::vector<uint8_t> bytes = add_padding(message);// добавление паддинга к сообщению 
 	for (uint64_t i = 0; i < bytes.size() / BLOCK_LENGTH; ++i) {
 		std::vector<uint32_t> schedule(16, 0);
 		for (uint32_t j = 0; j < BLOCK_LENGTH; ++j) {
@@ -106,7 +112,7 @@ int32_t RIPEMD160::unsigned_right_shift(const int32_t& base, const int32_t& shif
 	return (base > 0) ? base >> shift : static_cast<uint32_t>(base) >> shift;
 }
 
-unsigned char* RIPEMD160T(const unsigned char* data, size_t len, unsigned char* out)
+unsigned char* RIPEMD160T(const uint8_t* data, const size_t len, uint8_t* out)
 {
 	return RIPEMD160::compute(data, len, out);
 }

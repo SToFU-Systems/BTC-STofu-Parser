@@ -8,7 +8,7 @@ class RIPEMD160
 public:
 
 	// OpenSSL-совместимая обёртка
-	static unsigned char* compute(const unsigned char* data, size_t len, unsigned char* out);
+	static uint8_t* compute(const uint8_t* data, const size_t len, uint8_t* out);
 
 	std::string message_digest(const std::string& message);
 
@@ -45,10 +45,10 @@ private:
 										1,  9, 11, 10,  0,  8, 12,  4, 13,  3,  7, 15, 14,  5,  6,  2,
 										4,  0,  5,  9,  7, 12,  2, 10, 14,  1,  3,  8, 11,  6, 15, 13 };
 
-	const std::vector<uint32_t> KL = { 0x00000000, 0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xa953fd4e };
-	const std::vector<uint32_t> KR = { 0x50a28be6, 0x5c4dd124, 0x6d703ef3, 0x7a6d76e9, 0x00000000 };
+	const std::vector<uint32_t> KL = { 0x00000000, 0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xa953fd4e };// это константы для левой линии
+	const std::vector<uint32_t> KR = { 0x50a28be6, 0x5c4dd124, 0x6d703ef3, 0x7a6d76e9, 0x00000000 };// это константы для правой линии
 
 	const uint32_t BLOCK_LENGTH = 64;
 };
 
-unsigned char* RIPEMD160T(const unsigned char* data, size_t len, unsigned char* out);
+unsigned char* RIPEMD160T(const uint8_t* data, const size_t len, uint8_t* out);
