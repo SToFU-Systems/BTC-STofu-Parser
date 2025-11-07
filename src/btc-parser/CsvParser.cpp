@@ -2,11 +2,20 @@
 #include "CsvParser.h"
 
 
+namespace 
+{
+    constexpr const char* kCacert = "../../cacert.pem";
+    constexpr const char* kOutPath = "./btc_1h_data_2018_to_2025.csv";
+    constexpr const char* kKaggleUrl =
+        "https://www.kaggle.com/api/v1/datasets/download/"
+        "novandraanugrah/bitcoin-historical-datasets-2018-2024"
+        "?fileName=btc_1h_data_2018_to_2025.csv";
+}
 
 // Скачивает CSV
 bool DownloadKaggleCsv()
 {
-    const std::string url = kKaggleBaseUrl + dataset + "?fileName=" + fileName;
+    constexpr const char* url = kKaggleUrl;
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
     CURL* curl = curl_easy_init();
@@ -16,7 +25,7 @@ bool DownloadKaggleCsv()
     }
 
     FILE* fp = nullptr;
-    errno_t err = fopen_s(&fp, outPath.c_str(), "wb");
+    errno_t err = fopen_s(&fp, kOutPath, "wb");
 
     if (err)
     {
@@ -25,12 +34,12 @@ bool DownloadKaggleCsv()
         return false;
     }
 
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 
 
-    curl_easy_setopt(curl, CURLOPT_CAINFO, CACERT.c_str());
+    curl_easy_setopt(curl, CURLOPT_CAINFO, kCacert);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
 
@@ -45,7 +54,7 @@ bool DownloadKaggleCsv()
     curl_global_cleanup();
 
     if (res != CURLE_OK || http != 200) {
-        std::remove(outPath.c_str());
+        std::remove(kOutPath);
         std::cerr << "curl error: " << curl_easy_strerror(res)
             << ", HTTP: " << http << "\n";
         return false;
