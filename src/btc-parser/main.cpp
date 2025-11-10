@@ -12,6 +12,7 @@
 #include "Logger.hpp"
 #include "SingleBlockParser.h"
 #include "Utils.h"
+#include "CsvParser.h"
 
 Config config;
 

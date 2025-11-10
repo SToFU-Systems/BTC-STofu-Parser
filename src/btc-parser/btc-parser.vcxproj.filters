@@ -60,6 +60,15 @@
     <ClCompile Include="database\TransactionsDbPostgreSql.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="database\PostgreQueryCommands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Ripemd160.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CsvParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataTypes.h">
@@ -120,6 +129,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="database\TransactionsDbPostgreSql.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="database\PostgreQueryCommands.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Ripemd160.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CsvParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
