@@ -1,7 +1,12 @@
+// Precompiled headers
 #include "pch.h"
+
+// Project headers
 #include "CsvParser.h"
 
-
+//================================================================================
+// Constants
+//================================================================================
 namespace 
 {
     constexpr const char* kCacert = "../../cacert.pem";
@@ -11,7 +16,10 @@ namespace
         "?fileName=btc_1h_data_2018_to_2025.csv";
 }
 
-// Скачивает CSV
+//================================================================================
+// Method: DownloadKaggleCsv
+// Description: Downloads the Kaggle BTC dataset as a CSV file using cURL.
+//================================================================================
 bool DownloadKaggleCsv()
 {
     constexpr const char* url = kKaggleUrl;
@@ -20,12 +28,12 @@ bool DownloadKaggleCsv()
     CURL* curl = curl_easy_init();
     if (!curl)
     {
-        curl_global_cleanup(); return false;
+        curl_global_cleanup();
+        return false;
     }
 
     FILE* fp = nullptr;
     errno_t err = fopen_s(&fp, kOutPath, "wb");
-
     if (err)
     {
         curl_easy_cleanup(curl);
@@ -36,7 +44,6 @@ bool DownloadKaggleCsv()
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-
 
     curl_easy_setopt(curl, CURLOPT_CAINFO, kCacert);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
@@ -52,33 +59,39 @@ bool DownloadKaggleCsv()
     curl_easy_cleanup(curl);
     curl_global_cleanup();
 
-    if (res != CURLE_OK || http != 200) {
+    if (res != CURLE_OK || http != 200)
+    {
         std::remove(kOutPath);
         std::cerr << "curl error: " << curl_easy_strerror(res)
-            << ", HTTP: " << http << "\n";
+                  << ", HTTP: " << http << "\n";
         return false;
     }
 
     return true;
 }
 
-// Парсинг CSV → map<datetime, open>
+//================================================================================
+// Method: LoadCsvToMap
+// Description: Parses a CSV file and loads it into a std::map<datetime, open price>.
+//================================================================================
 std::map<std::string, double> LoadCsvToMap(const std::string& path)
 {
     std::map<std::string, double> result;
 
-	// Открытие файла CSV 
+    // Opening a CSV file
     std::ifstream fin(path);
-    if (!fin.is_open()) {
+    if (!fin.is_open())
+    {
         std::cerr << "Cannot open CSV file: " << path << "\n";
         return result;
     }
 
     std::string line;
-    std::getline(fin, line); // пропуск заголовка
+    std::getline(fin, line); // Skipping the header
 
-	// Чтение строк CSV и заполнение map
-    while (std::getline(fin, line)) {
+    // Reading CSV lines and filling a map
+    while (std::getline(fin, line))
+    {
         if (line.empty())
             continue;
 
