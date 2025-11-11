@@ -72,7 +72,7 @@ bool DownloadKaggleCsv()
 
 //================================================================================
 // Method: LoadCsvToMap
-// Description: Parses a CSV file and loads it into a std::map<datetime, open price>.
+// Description: Parses a UTF-8 CSV file and loads it into a std::map<std::string, double>.
 //================================================================================
 std::map<std::string, double> LoadCsvToMap(const std::string& path)
 {
@@ -113,6 +113,56 @@ std::map<std::string, double> LoadCsvToMap(const std::string& path)
         catch (const std::out_of_range&)
         {
             std::cerr << "Number out of range in line: " << line << "\n";
+        }
+    }
+
+    return result;
+}
+
+
+//================================================================================
+// Method: LoadCsvToMap
+// Description: Parses a Unicode (UTF-16/UTF-8) CSV file and loads it into a std::map<std::wstring, double>.
+//================================================================================
+std::map<std::wstring, double> LoadCsvToMap(const std::wstring& path)
+{
+    std::map<std::wstring, double> result;
+
+    // Opening a CSV file
+    std::wifstream fin(path);
+    if (!fin.is_open())
+    {
+        std::wcerr << "Cannot open CSV file: " << path << "\n";
+        return result;
+    }
+
+    std::wstring line;
+    std::getline(fin, line); // Skipping the header
+
+    // Reading CSV lines and filling a map
+    while (std::getline(fin, line))
+    {
+        if (line.empty())
+            continue;
+
+        std::wistringstream ss(line);
+        std::wstring datetime, open;
+
+        std::getline(ss, datetime, L',');
+        std::getline(ss, open, L',');
+
+        try
+        {
+            double openPrice = std::stod(open);
+            result[datetime] = openPrice;
+        }
+        catch (const std::invalid_argument&)
+        {
+            std::wcerr << L"Invalid number format in line: " << line << L"\n";
+        }
+        catch (const std::out_of_range&)
+        {
+            std::wcerr << L"Number out of range in line: " << line << L"\n";
         }
     }
 
