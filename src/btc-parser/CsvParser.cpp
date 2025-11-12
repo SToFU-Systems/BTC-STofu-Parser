@@ -24,40 +24,31 @@ bool DownloadKaggleCsv()
 {
     constexpr const char* url = kKaggleUrl;
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    CURL* curl = curl_easy_init();
+    std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl{ curl_easy_init(), &curl_easy_cleanup};
     if (!curl)
-    {
-        curl_global_cleanup();
         return false;
-    }
+    
 
     FILE* fp = nullptr;
     errno_t err = fopen_s(&fp, kOutPath, "wb");
-    if (err)
-    {
-        curl_easy_cleanup(curl);
-        curl_global_cleanup();
+    if (err || !fp)
         return false;
-    }
+    
+    std::unique_ptr<FILE, decltype(&fclose)> file{ fp, &fclose };
+    fp = nullptr;
 
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    curl_easy_setopt(curl.get(), CURLOPT_URL, url);
+    curl_easy_setopt(curl.get(), CURLOPT_FOLLOWLOCATION, 1L);
 
-    curl_easy_setopt(curl, CURLOPT_CAINFO, kCacert);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(curl.get(), CURLOPT_CAINFO, kCacert);
+    curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYHOST, 2L);
 
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+    curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, file.get());
 
-    CURLcode res = curl_easy_perform(curl);
+    CURLcode res = curl_easy_perform(curl.get());
     long http = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http);
-
-    fclose(fp);
-    curl_easy_cleanup(curl);
-    curl_global_cleanup();
+    curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http);
 
     if (res != CURLE_OK || http != 200)
     {
