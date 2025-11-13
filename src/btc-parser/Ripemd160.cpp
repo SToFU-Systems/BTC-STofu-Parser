@@ -4,11 +4,11 @@
 #include "Ripemd160.h"
 
 //================================================================================
-// Function: RIPEMD160::compute
-// Description: Computes the RIPEMD160 hash of input data. Initializes an internal
-//              instance, generates a hex digest via message_digest(), and writes
-//              the binary result (20 bytes) into the provided output buffer.
-//================================================================================
+	// Method: compute
+	// Description: Computes the RIPEMD160 hash of input data. Initializes an internal
+	//              instance, generates a hex digest via message_digest(), and writes
+	//              the binary result (20 bytes) into the provided output buffer.
+	//================================================================================
 uint8_t* RIPEMD160::compute(const uint8_t* data, const size_t len, uint8_t* out)
 {
 	if (!data || !out)
@@ -33,10 +33,9 @@ uint8_t* RIPEMD160::compute(const uint8_t* data, const size_t len, uint8_t* out)
 }
 
 //================================================================================
-// Function: RIPEMD160::message_digest
-// Description: Produces a RIPEMD160 hex digest from a string input. Performs
-//              message padding, block scheduling, and compression rounds. Returns
-//              a lowercase hexadecimal representation of the resulting hash.
+// Method: message_digest
+// Description: Computes the RIPEMD-160 digest for a given message string and returns
+//              the hash as a hexadecimal string.
 //================================================================================
 std::string RIPEMD160::message_digest(const std::string& message)
 {
@@ -93,10 +92,9 @@ std::string RIPEMD160::message_digest(const std::string& message)
 }
 
 //================================================================================
-// Function: RIPEMD160::add_padding
-// Description: Adds RIPEMD160-specific padding to the message. Appends a '1' bit,
-//              zeros until message length is congruent to 56 mod 64, then appends
-//              the original message length in bits as a 64-bit little-endian value.
+// Method: add_padding
+// Description: Adds RIPEMD-160 padding to the input message according to the algorithm 
+//              specification, preparing it for block processing.
 //================================================================================
 std::vector<uint8_t> RIPEMD160::add_padding(const std::string& message)
 {
@@ -120,9 +118,9 @@ std::vector<uint8_t> RIPEMD160::add_padding(const std::string& message)
 }
 
 //================================================================================
-// Function: RIPEMD160::ff
-// Description: Implements the five nonlinear functions used in each group of the
-//              RIPEMD160 compression process. Returns a 32-bit transformed value.
+// Method: ff
+// Description: RIPEMD-160 internal nonlinear function performing bitwise operations 
+//              used during message compression.
 //================================================================================
 uint32_t RIPEMD160::ff(const uint32_t& group, const uint32_t& x, const uint32_t& y, const uint32_t& z)
 {
@@ -152,9 +150,8 @@ uint32_t RIPEMD160::ff(const uint32_t& group, const uint32_t& x, const uint32_t&
 }
 
 //================================================================================
-// Function: RIPEMD160::unsigned_right_shift
-// Description: Performs an unsigned right shift on a 32-bit signed integer,
-//              emulating Java-style behavior for logical right shifts.
+// Method: unsigned_right_shift
+// Description: Performs an unsigned right shift operation on a signed 32-bit integer.
 //================================================================================
 int32_t RIPEMD160::unsigned_right_shift(const int32_t& base, const int32_t& shift)
 {
@@ -169,8 +166,8 @@ int32_t RIPEMD160::unsigned_right_shift(const int32_t& base, const int32_t& shif
 
 //================================================================================
 // Function: RIPEMD160T
-// Description: C-style wrapper for RIPEMD160::compute, used for compatibility with
-//              external code expecting a simple function call interface.
+// Description: External function wrapper for computing RIPEMD-160 hash using raw 
+//              input buffer. Returns pointer to the output hash bytes.
 //================================================================================
 uint8_t* RIPEMD160T(const uint8_t* data, const size_t len, uint8_t* out)
 {

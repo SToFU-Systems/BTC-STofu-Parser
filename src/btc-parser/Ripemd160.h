@@ -19,15 +19,16 @@ class RIPEMD160
 public:
 
     //================================================================================
-    // Function: compute
-    // Description: OpenSSL-compatible wrapper for RIPEMD-160. Takes input data and 
-    //              length, computes the hash, and writes the result into the provided buffer.
+    // Method: compute
+    // Description: Computes the RIPEMD160 hash of input data. Initializes an internal
+    //              instance, generates a hex digest via message_digest(), and writes
+    //              the binary result (20 bytes) into the provided output buffer.
     //================================================================================
     static uint8_t* compute(const uint8_t* data, const size_t len, uint8_t* out);
 
 
     //================================================================================
-    // Function: message_digest
+    // Method: message_digest
     // Description: Computes the RIPEMD-160 digest for a given message string and returns
     //              the hash as a hexadecimal string.
     //================================================================================
@@ -37,7 +38,7 @@ public:
 private:
 
     //================================================================================
-    // Function: add_padding
+    // Method: add_padding
     // Description: Adds RIPEMD-160 padding to the input message according to the algorithm 
     //              specification, preparing it for block processing.
     //================================================================================
@@ -45,7 +46,7 @@ private:
 
 
     //================================================================================
-    // Function: ff
+    // Method: ff
     // Description: RIPEMD-160 internal nonlinear function performing bitwise operations 
     //              used during message compression.
     //================================================================================
@@ -53,7 +54,7 @@ private:
 
 
     //================================================================================
-    // Function: unsigned_right_shift
+    // Method: unsigned_right_shift
     // Description: Performs an unsigned right shift operation on a signed 32-bit integer.
     //================================================================================
     int32_t unsigned_right_shift(const int32_t& base, const int32_t& shift);
