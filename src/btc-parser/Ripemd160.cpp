@@ -172,7 +172,7 @@ int32_t RIPEMD160::unsigned_right_shift(const int32_t& base, const int32_t& shif
 // Description: C-style wrapper for RIPEMD160::compute, used for compatibility with
 //              external code expecting a simple function call interface.
 //================================================================================
-unsigned char* RIPEMD160T(const uint8_t* data, const size_t len, uint8_t* out)
+uint8_t* RIPEMD160T(const uint8_t* data, const size_t len, uint8_t* out)
 {
 	return RIPEMD160::compute(data, len, out);
 }
