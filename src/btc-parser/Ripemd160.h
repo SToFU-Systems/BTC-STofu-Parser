@@ -24,4 +24,8 @@
 
 #include <stdint.h>
 
-void ripemd160(const uint8_t* data, uint32_t data_len, uint8_t* digest_bytes);
+ //================================================================================
+ // Function: RIPEMD160T
+ // Description: Computes the RIPEMD-160 hash of the input buffer.
+ //================================================================================
+void RIPEMD160T(const uint8_t* data, uint32_t data_len, uint8_t* digest_bytes);
