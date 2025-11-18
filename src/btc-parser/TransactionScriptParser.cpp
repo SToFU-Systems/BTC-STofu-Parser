@@ -312,7 +312,7 @@ std::string TransactionScriptParser::decodeScriptSigP2PKH(IN std::span<const uin
     SHA256(pubkey.data(), pubkey.size(), sha256Hash);
 
     uint8_t ripemd160Hash[RIPEMD160_DIGEST_LENGTH];
-    RIPEMD160T(sha256Hash, SHA256_DIGEST_LENGTH, ripemd160Hash);
+    RIPEMD160T(sha256Hash, ripemd160Hash);
 
     std::vector<uint8_t> version = { kMainnetP2pkhVersion };
     std::vector<uint8_t> payload(ripemd160Hash, ripemd160Hash + RIPEMD160_DIGEST_LENGTH);

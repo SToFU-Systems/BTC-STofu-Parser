@@ -166,20 +166,23 @@ namespace
 // Function: RIPEMD160T
 // Description: Computes the RIPEMD-160 hash of the input buffer.
 //================================================================================
-void RIPEMD160T(const uint8_t* data, uint32_t data_len, uint8_t* digest_bytes)
+void RIPEMD160T(std::span<const uint8_t> data, std::span<uint8_t> digest_bytes)
 {
+    size_t data_len = data.size();
+
     //NB assumes correct endianness
-    uint32_t* digest = (uint32_t*)digest_bytes;
+    uint32_t* digest = (uint32_t*)digest_bytes.data();
     for (uint8_t i = 0; i < 5; i++)
     {
         digest[i] = ripemd160_initial_digest[i];
     }
 
-    const uint8_t* last_chunk_start = data + (data_len & (~0x3f));
-    while (data < last_chunk_start)
+    const uint8_t* last_chunk_start = data.data() + (data_len & (~0x3f));
+    const uint8_t* ptr = data.data();
+    while (data.data() < last_chunk_start)
     {
-        ripemd160_update_digest(digest, (uint32_t*)data);
-        data += 0x40;
+        ripemd160_update_digest(digest, (uint32_t*)ptr);
+        ptr += 0x40;
     }
 
     uint8_t last_chunk[0x40];
@@ -187,7 +190,7 @@ void RIPEMD160T(const uint8_t* data, uint32_t data_len, uint8_t* digest_bytes)
 
     for (uint8_t i = 0; i < leftover_size; i++) 
     {
-        last_chunk[i] = *data++;
+        last_chunk[i] = *ptr++;
     }
 
     //append a single 1 bit and then zeroes, leaving 8 bytes for the length at the end
@@ -200,17 +203,17 @@ void RIPEMD160T(const uint8_t* data, uint32_t data_len, uint8_t* digest_bytes)
 
     if (leftover_size >= 0x38) {
         //no room for size in this chunk, add another chunk of zeroes
-        ripemd160_update_digest(digest, (uint32_t*)last_chunk);
+        ripemd160_update_digest(digest, reinterpret_cast<uint32_t*>(last_chunk));
         for (uint8_t i = 0; i < 0x38; i++)
         {
             last_chunk[i] = 0;
         }
     }
 
-    uint32_t* length_lsw = (uint32_t*)(last_chunk + 0x38);
+    uint32_t* length_lsw = reinterpret_cast<uint32_t*>(last_chunk + 0x38);
     *length_lsw = (data_len << 3);
-    uint32_t* length_msw = (uint32_t*)(last_chunk + 0x3c);
+    uint32_t* length_msw = reinterpret_cast<uint32_t*>(last_chunk + 0x3c);
     *length_msw = (data_len >> 29);
 
-    ripemd160_update_digest(digest, (uint32_t*)last_chunk);
+    ripemd160_update_digest(digest, reinterpret_cast<uint32_t*>(last_chunk));
 }
