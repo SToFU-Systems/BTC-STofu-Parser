@@ -3,6 +3,7 @@
 // Standard Library headers
 #include <string>
 #include <map>
+#include <AppErrorCode.hpp>
 
 //================================================================================
 // Class: CurlGlobal
@@ -65,11 +66,11 @@ bool DownloadKaggleCsv();
 // Method: LoadCsvToMap
 // Description: Parses a UTF-8 CSV file and loads it into a std::map<std::string, double>.
 //================================================================================
-std::map<std::string, double> LoadCsvToMap(const std::string& path);
+std::expected<std::map<std::string, double>, AppErrorCode> LoadCsvToMap(const std::string& path);
 
 
 //================================================================================
 // Method: LoadCsvToMap
 // Description: Parses a Unicode (UTF-16/UTF-8) CSV file and loads it into a std::map<std::wstring, double>.
 //================================================================================
-std::map<std::string, double> LoadCsvToMap(const std::string& path);
+std::expected<std::map<std::wstring, double>, AppErrorCode> LoadCsvToMap(const std::wstring& path);
