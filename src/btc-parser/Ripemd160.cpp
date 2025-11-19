@@ -73,7 +73,7 @@ namespace
 
             for (uint8_t i = 0; i < 16; i++)
             {
-                uint32_t tmp;
+                uint32_t tmp{};
                 switch (fn)
                 {
                 case 1:
@@ -168,7 +168,7 @@ namespace
 //================================================================================
 void RIPEMD160T(std::span<const uint8_t> data, std::span<uint8_t> digest_bytes)
 {
-    size_t data_len = data.size();
+    uint32_t data_len = static_cast<uint32_t>(data.size());
 
     //NB assumes correct endianness
     uint32_t* digest = (uint32_t*)digest_bytes.data();
