@@ -1,4 +1,5 @@
 _bin/
+_obj/
 packages/
 .vs/
 *.dat
