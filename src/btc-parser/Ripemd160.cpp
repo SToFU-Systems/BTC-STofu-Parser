@@ -32,13 +32,13 @@
 
 namespace
 {
-    uint32_t ripemd160_initial_digest[5] =
+    constexpr std::array<uint32_t, 5> ripemd160_initial_digest =
     { 0x67452301UL, 0xefcdab89UL, 0x98badcfeUL, 0x10325476UL, 0xc3d2e1f0UL };
 
-    uint8_t ripemd160_rho[16] =
+    constexpr std::array<uint8_t, 16> ripemd160_rho =
     { 0x7, 0x4, 0xd, 0x1, 0xa, 0x6, 0xf, 0x3, 0xc, 0x0, 0x9, 0x5, 0x2, 0xe, 0xb, 0x8 };
 
-    uint8_t ripemd160_shifts[80] =
+    constexpr std::array<uint8_t, 80> ripemd160_shifts =
     { 11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8
     , 12, 13, 11, 15, 6, 9, 9, 7, 12, 15, 11, 13, 7, 8, 7, 7
     , 13, 15, 14, 11, 7, 7, 6, 8, 13, 14, 13, 12, 5, 5, 6, 9
@@ -46,32 +46,45 @@ namespace
     , 15, 12, 13, 13, 9, 5, 8, 6, 14, 11, 12, 11, 8, 6, 5, 5
     };
 
-    uint32_t ripemd160_constants_left[5] =
+    constexpr std::array<uint32_t, 5> ripemd160_constants_left =
     { 0x00000000UL, 0x5a827999UL, 0x6ed9eba1UL, 0x8f1bbcdcUL, 0xa953fd4eUL };
 
-    uint32_t ripemd160_constants_right[5] =
+    constexpr std::array<uint32_t, 5> ripemd160_constants_right =
     { 0x50a28be6UL, 0x5c4dd124UL, 0x6d703ef3UL, 0x7a6d76e9UL, 0x00000000UL };
 
-    uint8_t ripemd160_fns_left[5] = { 1, 2, 3, 4, 5 };
-    uint8_t ripemd160_fns_right[5] = { 5, 4, 3, 2, 1 };
+    constexpr std::array<uint8_t, 5> ripemd160_fns_left = { 1, 2, 3, 4, 5 };
+    constexpr std::array<uint8_t, 5> ripemd160_fns_right = { 5, 4, 3, 2, 1 };
 
-#define ROL(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
+    constexpr size_t kDigestWords = 5ULL;
+    constexpr size_t kRoundSize = 16ULL;
+    constexpr uint32_t kRotateConst = 10U;
+    constexpr uint32_t kWordBits = 32U;
+
+    constexpr uint32_t ROL(uint32_t x, uint32_t n)
+    {
+        uint32_t a = (x) << (n);
+        uint32_t b = ((x) >> (kWordBits - (n)));
+
+        return (a | b);
+    }
 
     //================================================================================
     // Function: ripemd160_compute_line
     // Description: Internal function performing one RIPEMD-160 transform line.
     //================================================================================
-    void ripemd160_compute_line(uint32_t* digest, uint32_t* words, uint32_t* chunk, uint8_t* index, uint8_t* shifts, uint32_t* ks, uint8_t* fns) {
-        for (uint8_t i = 0; i < 5; i++) {
+    void ripemd160_compute_line(uint32_t* digest, std::array<uint32_t, 5>& words, uint32_t* chunk, std::array<uint8_t, 16>& index, const std::array<uint8_t, 80>& shifts, const std::array<uint32_t, 5>& ks, const std::array<uint8_t, 5>& fns)
+    {
+        for (uint8_t i = 0; i < kDigestWords; i++) 
+        {
             words[i] = digest[i];
         }
-
+        size_t shift_offset = 0;
         for (uint8_t round = 0; /* breaks out mid-loop */; round++)
         {
             uint32_t k = ks[round];
             uint8_t  fn = fns[round];
 
-            for (uint8_t i = 0; i < 16; i++)
+            for (uint8_t i = 0; i < kRoundSize; i++)
             {
                 uint32_t tmp{};
                 switch (fn)
@@ -94,24 +107,24 @@ namespace
                 }
 
                 tmp += words[0] + chunk[index[i]] + k;
-                tmp = ROL(tmp, shifts[index[i]]) + words[4];
+                tmp = ROL(tmp, shifts[shift_offset + index[i]]) + words[4];
                 words[0] = words[4];
                 words[4] = words[3];
-                words[3] = ROL(words[2], 10);
+                words[3] = ROL(words[2], kRotateConst);
                 words[2] = words[1];
                 words[1] = tmp;
             }
             if (round == 4)
                 break;
-            shifts += 16;
-            uint8_t index_tmp[16];
+            shift_offset += kRoundSize;
+            std::array<uint8_t, kRoundSize> index_tmp;
 
-            for (uint8_t i = 0; i < 16; i++)
+            for (uint8_t i = 0; i < index_tmp.size(); i++)
             {
                 index_tmp[i] = ripemd160_rho[index[i]];
             }
 
-            for (uint8_t i = 0; i < 16; i++)
+            for (uint8_t i = 0; i < index_tmp.size(); i++)
             {
                 index[i] = index_tmp[i];
             }
@@ -124,33 +137,32 @@ namespace
     //================================================================================
     void ripemd160_update_digest(uint32_t* digest, uint32_t* chunk)
     {
-        uint8_t index[16];
+        std::array<uint8_t, kRoundSize> index;
         //initial permutation for left line is the identity
-        for (uint8_t i = 0; i < 16; i++) 
+        for (uint8_t i = 0; i < index.size(); i++)
         {
             index[i] = i;
         }
 
-        uint32_t words_left[5];
+        std::array<uint32_t, 5> words_left{}; 
         ripemd160_compute_line(digest, words_left, chunk, index, ripemd160_shifts, ripemd160_constants_left, ripemd160_fns_left);
 
         //initial permutation for right line is 5+9i (mod 16)
         index[0] = 5;
 
-        for (uint8_t i = 1; i < 16; i++)
+        for (uint8_t i = 1; i < index.size(); i++)
         {
             index[i] = (index[i - 1] + 9) & 0x0f;
         }
 
-        uint32_t words_right[5];
+        std::array<uint32_t, kDigestWords> words_right{};
         ripemd160_compute_line(digest, words_right, chunk, index, ripemd160_shifts, ripemd160_constants_right, ripemd160_fns_right);
 
         //update digest
-        digest[0] += words_left[1] + words_right[2];
-        digest[1] += words_left[2] + words_right[3];
-        digest[2] += words_left[3] + words_right[4];
-        digest[3] += words_left[4] + words_right[0];
-        digest[4] += words_left[0] + words_right[1];
+        for (size_t i = 0; i < kDigestWords; ++i)
+        {
+            digest[i] += words_left[(i + 1) % 5] + words_right[(i + 2) % 5];
+        }
 
         //final rotation
         words_left[0] = digest[0];
@@ -171,21 +183,19 @@ void RIPEMD160T(std::span<const uint8_t> data, std::span<uint8_t> digest_bytes)
     uint32_t data_len = static_cast<uint32_t>(data.size());
 
     //NB assumes correct endianness
-    uint32_t* digest = (uint32_t*)digest_bytes.data();
-    for (uint8_t i = 0; i < 5; i++)
-    {
-        digest[i] = ripemd160_initial_digest[i];
-    }
+    uint32_t* digest = reinterpret_cast<uint32_t*>(digest_bytes.data());
+
+    std::copy_n(ripemd160_initial_digest.begin(), 5, digest);
 
     const uint8_t* last_chunk_start = data.data() + (data_len & (~0x3f));
     const uint8_t* ptr = data.data();
-    while (data.data() < last_chunk_start)
+    while (ptr < last_chunk_start)
     {
-        ripemd160_update_digest(digest, (uint32_t*)ptr);
+        ripemd160_update_digest(digest, reinterpret_cast< uint32_t*>(const_cast<uint8_t*>(ptr)));
         ptr += 0x40;
     }
 
-    uint8_t last_chunk[0x40];
+    uint8_t last_chunk[0x40]{};
     uint8_t leftover_size = data_len & 0x3f;
 
     for (uint8_t i = 0; i < leftover_size; i++) 
