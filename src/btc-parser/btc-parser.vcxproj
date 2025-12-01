@@ -182,7 +182,7 @@
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)..\..\3rd-party\CloneDll\*" "$(SolutionDir)_bin\$(Platform)\$(Configuration)\" /Y</Command>
+      <Command>xcopy "$(ProjectDir)..\..\3rd-party\DependenciesDll\*" "$(SolutionDir)_bin\$(Platform)\$(Configuration)\" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
