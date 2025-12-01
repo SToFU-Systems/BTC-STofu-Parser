@@ -5,6 +5,13 @@
 #include <map>
 #include <AppErrorCode.hpp>
 
+
+//=========================================================================================
+// CONSTANS
+//=========================================================================================
+constexpr const char* kOutPath = "./btc_1h_data_2018_to_2025.csv";
+constexpr const wchar_t* kOutPathW = L"./btc_1h_data_2018_to_2025.csv";
+
 //================================================================================
 // Class: CurlGlobal
 // Description: Singleton responsible for initializing and cleaning up

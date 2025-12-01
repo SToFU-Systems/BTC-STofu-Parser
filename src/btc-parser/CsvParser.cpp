@@ -11,7 +11,6 @@
 namespace
 {
 	constexpr const char* kCacert = "../../cacert.pem";
-	constexpr const char* kOutPath = "./btc_1h_data_2018_to_2025.csv";
 	constexpr const char* kKaggleUrl = "https://www.kaggle.com/api/v1/datasets/download/"
 		"novandraanugrah/bitcoin-historical-datasets-2018-2024"
 		"?fileName=btc_1h_data_2018_to_2025.csv";
