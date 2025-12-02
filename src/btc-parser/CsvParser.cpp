@@ -5,6 +5,7 @@
 #include "Logger.hpp"
 #include "CsvParser.h"
 
+
 //================================================================================
 // Constants
 //================================================================================
@@ -31,7 +32,6 @@ bool DownloadKaggleCsv()
 		LOG_ERROR("Failed to initialize CURL (curl_easy_init returned nullptr)");
 		return false;
 	}
-
 
 	FILE* fp = nullptr;
 	errno_t err = fopen_s(&fp, kOutPath, "wb");

@@ -1,11 +1,14 @@
+// Precompiled headers
 #include "pch.h"
+
+// Project headers
 #include "CurlUtils.h"
 
 
 //============================================================================
-	// Constructor: CurlGlobal
-	// Description: Performs global initialization of cURL.
-	//============================================================================
+// Constructor: CurlGlobal
+// Description: Performs global initialization of cURL.
+//============================================================================
 CurlGlobal::CurlGlobal()
 {
 	curl_global_init(CURL_GLOBAL_DEFAULT);

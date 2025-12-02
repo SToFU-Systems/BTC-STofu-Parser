@@ -60,7 +60,11 @@ namespace
     constexpr uint32_t kRotateConst = 10U;
     constexpr uint32_t kWordBits = 32U;
 
-    constexpr uint32_t ROL(uint32_t x, uint32_t n)
+    //================================================================================
+    // Function: ROL
+    // Description: Performs a 32-bit rotate-left operation on the given value.
+    //================================================================================
+    constexpr uint32_t ROL(IN uint32_t x, IN uint32_t n)
     {
         uint32_t a = (x) << (n);
         uint32_t b = ((x) >> (kWordBits - (n)));
@@ -72,7 +76,15 @@ namespace
     // Function: ripemd160_compute_line
     // Description: Internal function performing one RIPEMD-160 transform line.
     //================================================================================
-    void ripemd160_compute_line(uint32_t* digest, std::array<uint32_t, 5>& words, uint32_t* chunk, std::array<uint8_t, 16>& index, const std::array<uint8_t, 80>& shifts, const std::array<uint32_t, 5>& ks, const std::array<uint8_t, 5>& fns)
+    void ripemd160_compute_line(
+        INOUT uint32_t* digest,
+        OUT   std::array<uint32_t, 5>& words,
+        IN    uint32_t* chunk,
+        INOUT std::array<uint8_t, 16>& index,
+        IN    const std::array<uint8_t, 80>& shifts,
+        IN    const std::array<uint32_t, 5>& ks,
+        IN    const std::array<uint8_t, 5>& fns
+    )
     {
         for (uint8_t i = 0; i < kDigestWords; i++) 
         {
@@ -135,7 +147,7 @@ namespace
     // Function: ripemd160_update_digest
     // Description: Updates the digest using one 512-bit chunk of data.
     //================================================================================
-    void ripemd160_update_digest(uint32_t* digest, uint32_t* chunk)
+    void ripemd160_update_digest(INOUT uint32_t* digest, IN uint32_t* chunk)
     {
         std::array<uint8_t, kRoundSize> index;
         //initial permutation for left line is the identity
@@ -178,7 +190,7 @@ namespace
 // Function: RIPEMD160T
 // Description: Computes the RIPEMD-160 hash of the input buffer.
 //================================================================================
-void RIPEMD160T(std::span<const uint8_t> data, std::span<uint8_t> digest_bytes)
+void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_bytes)
 {
     uint32_t data_len = static_cast<uint32_t>(data.size());
 
