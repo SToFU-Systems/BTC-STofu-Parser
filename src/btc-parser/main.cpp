@@ -13,6 +13,7 @@
 #include "SingleBlockParser.h"
 #include "Utils.h"
 #include "CsvParser.h"
+#include "CurlUtils.h"
 
 Config config;
 
@@ -87,11 +88,10 @@ int wmain(int argc, wchar_t* argv[])
 		return -1;
 	}
 
-
 	LOG_INFO("CSV downloaded successfully.");
 
 	// Download CSV (UTF-8 version)
-	auto result = LoadCsvToMap(kOutPathW);
+	auto result = LoadCsvToMap();
 
 
 	// Config

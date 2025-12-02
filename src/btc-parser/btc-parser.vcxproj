@@ -190,6 +190,7 @@
     <ClCompile Include="BlockFileParser.cpp" />
     <ClCompile Include="BlockHeaderParser.cpp" />
     <ClCompile Include="CsvParser.cpp" />
+    <ClCompile Include="CurlUtils.cpp" />
     <ClCompile Include="database\PostgreQueryCommands.cpp" />
     <ClCompile Include="database\TransactionsDbPostgreSql.cpp" />
     <ClCompile Include="JsonUtils.cpp" />
@@ -219,6 +220,7 @@
     <ClInclude Include="Config.h" />
     <ClInclude Include="BlockPrinter.h" />
     <ClInclude Include="CsvParser.h" />
+    <ClInclude Include="CurlUtils.h" />
     <ClInclude Include="database\IDatabase.h" />
     <ClInclude Include="database\ITransactionDatabase.h" />
     <ClInclude Include="database\PostgreQueryCommands.h" />

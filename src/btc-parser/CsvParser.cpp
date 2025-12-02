@@ -10,6 +10,8 @@
 //================================================================================
 namespace
 {
+	constexpr const char* kOutPath = "./btc_1h_data_2018_to_2025.csv";
+	constexpr const wchar_t* kOutPathW = L"./btc_1h_data_2018_to_2025.csv";
 	constexpr const char* kCacert = "../../cacert.pem";
 	constexpr const char* kKaggleUrl = "https://www.kaggle.com/api/v1/datasets/download/"
 		"novandraanugrah/bitcoin-historical-datasets-2018-2024"
@@ -70,14 +72,13 @@ bool DownloadKaggleCsv()
 // Method: LoadCsvToMap
 // Description: Parses a UTF-8 CSV file and loads it into a std::map<std::string, double>.
 //================================================================================
-std::expected<std::map<std::string, double>, AppErrorCode> LoadCsvToMap(const std::string& path)
-
+std::expected<std::map<std::string, double>, AppErrorCode> LoadCsvToMap()
 {
 	// Opening a CSV file
-	std::ifstream fin(path);
+	std::ifstream fin(kOutPath);
 	if (!fin.is_open())
 	{
-		LOG_ERROR("Cannot open CSV file: {}\n", path);
+		LOG_ERROR("Cannot open CSV file: {}\n", kOutPath);
 		return std::unexpected(AppErrorCode::FileNotFound);
 	}
 
@@ -120,13 +121,13 @@ std::expected<std::map<std::string, double>, AppErrorCode> LoadCsvToMap(const st
 // Method: LoadCsvToMap
 // Description: Parses a Unicode (UTF-16/UTF-8) CSV file and loads it into a std::map<std::wstring, double>.
 //================================================================================
-std::expected<std::map<std::wstring, double>, AppErrorCode> LoadCsvToMap(const std::wstring& path)
+std::expected<std::map<std::wstring, double>, AppErrorCode> LoadCsvToMapW()
 {
 	// Opening a CSV file
-	std::wifstream fin(path);
+	std::wifstream fin(kOutPathW);
 	if (!fin.is_open())
 	{
-		LOG_ERROR("Cannot open CSV file: {}\n", path);
+		LOG_ERROR("Cannot open CSV file: {}\n", kOutPathW);
 		return std::unexpected(AppErrorCode::FileNotFound);
 	}
 
