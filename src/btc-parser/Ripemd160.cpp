@@ -32,13 +32,17 @@
 
 namespace
 {
-    constexpr std::array<uint32_t, 5> ripemd160_initial_digest =
+    constexpr size_t kDigestWords = 5ULL;
+    constexpr size_t kRoundSize = 16ULL;
+    constexpr size_t kNumShifts = 80ULL;
+
+    constexpr std::array<uint32_t, kDigestWords> ripemd160_initial_digest =
     { 0x67452301UL, 0xefcdab89UL, 0x98badcfeUL, 0x10325476UL, 0xc3d2e1f0UL };
 
-    constexpr std::array<uint8_t, 16> ripemd160_rho =
+    constexpr std::array<uint8_t, kRoundSize> ripemd160_rho =
     { 0x7, 0x4, 0xd, 0x1, 0xa, 0x6, 0xf, 0x3, 0xc, 0x0, 0x9, 0x5, 0x2, 0xe, 0xb, 0x8 };
 
-    constexpr std::array<uint8_t, 80> ripemd160_shifts =
+    constexpr std::array<uint8_t, kNumShifts> ripemd160_shifts =
     { 11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8
     , 12, 13, 11, 15, 6, 9, 9, 7, 12, 15, 11, 13, 7, 8, 7, 7
     , 13, 15, 14, 11, 7, 7, 6, 8, 13, 14, 13, 12, 5, 5, 6, 9
@@ -46,19 +50,16 @@ namespace
     , 15, 12, 13, 13, 9, 5, 8, 6, 14, 11, 12, 11, 8, 6, 5, 5
     };
 
-    constexpr std::array<uint32_t, 5> ripemd160_constants_left =
+    constexpr std::array<uint32_t, kDigestWords> ripemd160_constants_left =
     { 0x00000000UL, 0x5a827999UL, 0x6ed9eba1UL, 0x8f1bbcdcUL, 0xa953fd4eUL };
 
-    constexpr std::array<uint32_t, 5> ripemd160_constants_right =
+    constexpr std::array<uint32_t, kDigestWords> ripemd160_constants_right =
     { 0x50a28be6UL, 0x5c4dd124UL, 0x6d703ef3UL, 0x7a6d76e9UL, 0x00000000UL };
 
-    constexpr std::array<uint8_t, 5> ripemd160_fns_left = { 1, 2, 3, 4, 5 };
-    constexpr std::array<uint8_t, 5> ripemd160_fns_right = { 5, 4, 3, 2, 1 };
+    constexpr std::array<uint8_t, kDigestWords> ripemd160_fns_left = { 1, 2, 3, 4, 5 };
+    constexpr std::array<uint8_t, kDigestWords> ripemd160_fns_right = { 5, 4, 3, 2, 1 };
 
-    constexpr size_t kDigestWords = 5ULL;
-    constexpr size_t kRoundSize = 16ULL;
-    constexpr uint32_t kRotateConst = 10U;
-    constexpr uint32_t kWordBits = 32U;
+
 
     //================================================================================
     // Function: ROL
@@ -66,6 +67,8 @@ namespace
     //================================================================================
     constexpr uint32_t ROL(IN uint32_t x, IN uint32_t n)
     {
+        constexpr uint32_t kWordBits = 32U;
+
         uint32_t a = (x) << (n);
         uint32_t b = ((x) >> (kWordBits - (n)));
 
@@ -78,14 +81,16 @@ namespace
     //================================================================================
     void ripemd160_compute_line(
         IN    const uint32_t* chunk,
-        IN    const std::array<uint8_t, 80>& shifts,
-        IN    const std::array<uint32_t, 5>& ks,
-        IN    const std::array<uint8_t, 5>& fns,
+        IN    const std::array<uint8_t, kNumShifts>& shifts,
+        IN    const std::array<uint32_t, kDigestWords>& ks,
+        IN    const std::array<uint8_t, kDigestWords>& fns,
         INOUT uint32_t* digest,
-        INOUT std::array<uint8_t, 16>& index,
-        OUT   std::array<uint32_t, 5>& words
+        INOUT std::array<uint8_t, kRoundSize>& index,
+        OUT   std::array<uint32_t, kDigestWords>& words
     )
     {
+        constexpr uint32_t kRotateConst = 10U;
+
         for (uint8_t i = 0; i < kDigestWords; i++) 
         {
             words[i] = digest[i];
@@ -156,7 +161,7 @@ namespace
             index[i] = i;
         }
 
-        std::array<uint32_t, 5> words_left{}; 
+        std::array<uint32_t, kDigestWords> words_left{};
         ripemd160_compute_line(chunk,  ripemd160_shifts,  ripemd160_constants_left, ripemd160_fns_left, digest, index, words_left);
 
         //initial permutation for right line is 5+9i (mod 16)
@@ -192,23 +197,34 @@ namespace
 //================================================================================
 void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_bytes)
 {
-    uint32_t data_len = static_cast<uint32_t>(data.size());
+
+    constexpr size_t   kBlockSizeBytes = 0x40ULL;// RIPEMD-160 block size: 64 bytes
+    constexpr uint8_t  kBlockRemainderMask = 0x3fU;// Mask for data_len % 64 (0x3F = 63)
+    constexpr uint8_t  kPaddingByte = 0x80U;// Padding start byte: 1000 0000 (one '1' bit)
+
+    constexpr size_t   kLengthLswOffset = 0x38ULL; // Offset of low 32-bit message length (56)
+    constexpr size_t   kLengthMswOffset = 0x3cULL; // Offset of high 32-bit message length (60)
+
+    constexpr uint32_t kLowLengthShift = 3U;   // Shift left by 3: convert message length from bytes to bits
+    constexpr uint32_t kHighLengthShift = 29U;  // Shift right by 29: upper 32 bits of the 64-bit bit-length
+
+    const uint32_t data_len = static_cast<uint32_t>(data.size());
 
     //NB assumes correct endianness
     uint32_t* digest = reinterpret_cast<uint32_t*>(digest_bytes.data());
 
-    std::copy_n(ripemd160_initial_digest.begin(), 5, digest);
+    std::copy_n(ripemd160_initial_digest.begin(), kDigestWords, digest);
 
-    const uint8_t* last_chunk_start = data.data() + (data_len & (~0x3f));
+    const uint8_t* last_chunk_start = data.data() + (data_len & (~kBlockRemainderMask));
     const uint8_t* ptr = data.data();
     while (ptr < last_chunk_start)
     {
         ripemd160_update_digest( reinterpret_cast< const uint32_t*>(ptr), digest);
-        ptr += 0x40;
+        ptr += kBlockSizeBytes;
     }
 
-    uint8_t last_chunk[0x40]{};
-    uint8_t leftover_size = data_len & 0x3f;
+    uint8_t last_chunk[kBlockSizeBytes]{};
+    uint8_t leftover_size = data_len & kBlockRemainderMask;
 
     for (uint8_t i = 0; i < leftover_size; i++) 
     {
@@ -216,26 +232,26 @@ void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_
     }
 
     //append a single 1 bit and then zeroes, leaving 8 bytes for the length at the end
-    last_chunk[leftover_size] = 0x80;
+    last_chunk[leftover_size] = kPaddingByte;
 
-    for (uint8_t i = leftover_size + 1; i < 0x40; i++)
+    for (uint8_t i = leftover_size + 1; i < kBlockSizeBytes; i++)
     {
         last_chunk[i] = 0;
     }
 
-    if (leftover_size >= 0x38) {
+    if (leftover_size >= kLengthLswOffset) {
         //no room for size in this chunk, add another chunk of zeroes
         ripemd160_update_digest(reinterpret_cast<uint32_t*>(last_chunk), digest);
-        for (uint8_t i = 0; i < 0x38; i++)
+        for (uint8_t i = 0; i < kLengthLswOffset; i++)
         {
             last_chunk[i] = 0;
         }
     }
 
-    uint32_t* length_lsw = reinterpret_cast<uint32_t*>(last_chunk + 0x38);
-    *length_lsw = (data_len << 3);
-    uint32_t* length_msw = reinterpret_cast<uint32_t*>(last_chunk + 0x3c);
-    *length_msw = (data_len >> 29);
+    uint32_t* length_lsw = reinterpret_cast<uint32_t*>(last_chunk + kLengthLswOffset);
+    *length_lsw = (data_len << kLowLengthShift);
+    uint32_t* length_msw = reinterpret_cast<uint32_t*>(last_chunk + kLengthMswOffset);
+    *length_msw = (data_len >> kHighLengthShift);
 
     ripemd160_update_digest(reinterpret_cast<uint32_t*>(last_chunk), digest);
 }
