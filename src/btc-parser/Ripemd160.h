@@ -22,15 +22,15 @@
  *  SOFTWARE.
  */
 
- // Standard Library headers
+// Standard Library headers
 #include <span>
 
- // Project headers
+// Project headers
 #include <Common.h>
 
 
- //================================================================================
- // Function: RIPEMD160T
- // Description: Computes the RIPEMD-160 hash of the input buffer.
- //================================================================================
+//================================================================================
+// Function: RIPEMD160T
+// Description: Computes the RIPEMD-160 hash of the input buffer.
+//================================================================================
 void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_bytes);

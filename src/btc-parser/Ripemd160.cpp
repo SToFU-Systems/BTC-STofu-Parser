@@ -77,13 +77,13 @@ namespace
     // Description: Internal function performing one RIPEMD-160 transform line.
     //================================================================================
     void ripemd160_compute_line(
-        INOUT uint32_t* digest,
-        OUT   std::array<uint32_t, 5>& words,
-        IN    uint32_t* chunk,
-        INOUT std::array<uint8_t, 16>& index,
+        IN    const uint32_t* chunk,
         IN    const std::array<uint8_t, 80>& shifts,
         IN    const std::array<uint32_t, 5>& ks,
-        IN    const std::array<uint8_t, 5>& fns
+        IN    const std::array<uint8_t, 5>& fns,
+        INOUT uint32_t* digest,
+        INOUT std::array<uint8_t, 16>& index,
+        OUT   std::array<uint32_t, 5>& words
     )
     {
         for (uint8_t i = 0; i < kDigestWords; i++) 
@@ -147,7 +147,7 @@ namespace
     // Function: ripemd160_update_digest
     // Description: Updates the digest using one 512-bit chunk of data.
     //================================================================================
-    void ripemd160_update_digest(INOUT uint32_t* digest, IN uint32_t* chunk)
+    void ripemd160_update_digest(IN const uint32_t* chunk, INOUT uint32_t* digest)
     {
         std::array<uint8_t, kRoundSize> index;
         //initial permutation for left line is the identity
@@ -157,7 +157,7 @@ namespace
         }
 
         std::array<uint32_t, 5> words_left{}; 
-        ripemd160_compute_line(digest, words_left, chunk, index, ripemd160_shifts, ripemd160_constants_left, ripemd160_fns_left);
+        ripemd160_compute_line(chunk,  ripemd160_shifts,  ripemd160_constants_left, ripemd160_fns_left, digest, index, words_left);
 
         //initial permutation for right line is 5+9i (mod 16)
         index[0] = 5;
@@ -168,7 +168,7 @@ namespace
         }
 
         std::array<uint32_t, kDigestWords> words_right{};
-        ripemd160_compute_line(digest, words_right, chunk, index, ripemd160_shifts, ripemd160_constants_right, ripemd160_fns_right);
+        ripemd160_compute_line(chunk, ripemd160_shifts, ripemd160_constants_right, ripemd160_fns_right, digest, index, words_right);
 
         //update digest
         for (size_t i = 0; i < kDigestWords; ++i)
@@ -203,7 +203,7 @@ void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_
     const uint8_t* ptr = data.data();
     while (ptr < last_chunk_start)
     {
-        ripemd160_update_digest(digest, reinterpret_cast< uint32_t*>(const_cast<uint8_t*>(ptr)));
+        ripemd160_update_digest( reinterpret_cast< const uint32_t*>(ptr), digest);
         ptr += 0x40;
     }
 
@@ -225,7 +225,7 @@ void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_
 
     if (leftover_size >= 0x38) {
         //no room for size in this chunk, add another chunk of zeroes
-        ripemd160_update_digest(digest, reinterpret_cast<uint32_t*>(last_chunk));
+        ripemd160_update_digest(reinterpret_cast<uint32_t*>(last_chunk), digest);
         for (uint8_t i = 0; i < 0x38; i++)
         {
             last_chunk[i] = 0;
@@ -237,5 +237,5 @@ void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_
     uint32_t* length_msw = reinterpret_cast<uint32_t*>(last_chunk + 0x3c);
     *length_msw = (data_len >> 29);
 
-    ripemd160_update_digest(digest, reinterpret_cast<uint32_t*>(last_chunk));
+    ripemd160_update_digest(reinterpret_cast<uint32_t*>(last_chunk), digest);
 }
