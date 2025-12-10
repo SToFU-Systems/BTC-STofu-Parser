@@ -25,9 +25,9 @@ Config config;
 //================================================================================
 static int failMessage(const AppErrorCode code, const std::string& msg)
 {
-	std::error_code ec = code;
-	std::cerr << std::format("[ERROR] [Code {}] {} | {}\n", ec.value(), ec.message(), msg);
-	return ec.value();
+    std::error_code ec = code;
+    std::cerr << std::format("[ERROR] [Code {}] {} | {}\n", ec.value(), ec.message(), msg);
+    return ec.value();
 }
 
 //================================================================================
@@ -38,9 +38,9 @@ static int failMessage(const AppErrorCode code, const std::string& msg)
 //================================================================================
 static int failMessageLog(const AppErrorCode code, const std::string& msg)
 {
-	std::error_code ec = code;
-	LOG_ERROR("[Code {}] {} | {}", ec.value(), ec.message(), msg);
-	return ec.value();
+    std::error_code ec = code;
+    LOG_ERROR("[Code {}] {} | {}", ec.value(), ec.message(), msg);
+    return ec.value();
 }
 
 //================================================================================
@@ -52,13 +52,13 @@ static int failMessageLog(const AppErrorCode code, const std::string& msg)
 //================================================================================
 bool setLogger(const std::string& logPath)
 {
-	LOG_TYPE level = LOG_TYPE::LOG_INFO;
+    LOG_TYPE level = LOG_TYPE::LOG_INFO;
 
 #ifdef _DEBUG
-	level = LOG_TYPE::LOG_VERBOSE;
+    level = LOG_TYPE::LOG_VERBOSE;
 #endif // _DEBUG
 
-	return Logger::Init(logPath, level);;
+    return Logger::Init(logPath, level);;
 }
 
 //================================================================================
@@ -70,92 +70,92 @@ bool setLogger(const std::string& logPath)
 //================================================================================
 int wmain(int argc, wchar_t* argv[])
 {
-	// Set logger
-	constexpr const char* kLogDir = "../../log/";
+    // Set logger
+    constexpr const char* kLogDir = "../../log/";
     if(!setLogger(kLogDir))
-		return failMessage(AppErrorCode::LoggerInitFailure,
-			"Failed to initialize logger");
+        return failMessage(AppErrorCode::LoggerInitFailure,
+            "Failed to initialize logger");
 
-	// Anotation CurlGlobal RAII
-	CurlGlobal::instance();
+    // Anotation CurlGlobal RAII
+    CurlGlobal::instance();
 
-	LOG_INFO("Starting BTC analyzer...");
+    LOG_INFO("Starting BTC analyzer...");
 
-	constexpr const char* kOutPath = "./btc_1h_data_2018_to_2025.csv";
-	constexpr const char* kCacert = "../../cacert.pem";
+    constexpr const char* kOutPath = "../../output/btc_1h_data_2018_to_2025.csv";
+    constexpr const char* kCacert = "../../cacert.pem";
 
-	CsvParser csvParser(kOutPath, kCacert);
+    CsvParser csvParser(kOutPath, kCacert);
 
-	// Download CSV with Kaggle
-	if (!csvParser.DownloadKaggleCsv())
-	{
-		LOG_ERROR("Failed to download BTC CSV file.");
-		return -1;
-	}
+    // Download CSV with Kaggle
+    if (!csvParser.DownloadKaggleCsv())
+    {
+        LOG_ERROR("Failed to download BTC CSV file.");
+        return -1;
+    }
 
-	LOG_INFO("CSV downloaded successfully.");
+    LOG_INFO("CSV downloaded successfully.");
 
-	// Download CSV (UTF-8 version)
-	auto result = csvParser.LoadCsvToMap();
+    // Download CSV (UTF-8 version)
+    auto result = csvParser.LoadCsvToMap();
 
-	// Config
-	const AppErrorCode kConfigInitResult = config.init(argc, argv);
-	if (kConfigInitResult != AppErrorCode::Success)
-		return failMessageLog(kConfigInitResult, "Received incorrect command arguments");
+    // Config
+    const AppErrorCode kConfigInitResult = config.init(argc, argv);
+    if (kConfigInitResult != AppErrorCode::Success)
+        return failMessageLog(kConfigInitResult, "Received incorrect command arguments");
 
-	const std::wstring kBlockDirectory = config.getBlockPath();
-	const std::wstring kXorPath = config.getXorPath();
-	const std::wstring kOutputPath = config.getOutputPath();
+    const std::wstring kBlockDirectory = config.getBlockPath();
+    const std::wstring kXorPath = config.getXorPath();
+    const std::wstring kOutputPath = config.getOutputPath();
 
-	try
-	{
-		// Get list of btc files
-		LOG_VERBOSE("Extracting list of block files in \'{}\'...", kBlockDirectory);
-		std::vector<std::wstring> blocksPath = getBlockFilesInDirectory(kBlockDirectory);
-		LOG_VERBOSE("Found {} block files.", blocksPath.size());
+    try
+    {
+        // Get list of btc files
+        LOG_VERBOSE("Extracting list of block files in \'{}\'...", kBlockDirectory);
+        std::vector<std::wstring> blocksPath = getBlockFilesInDirectory(kBlockDirectory);
+        LOG_VERBOSE("Found {} block files.", blocksPath.size());
 
-		for (const std::wstring& kBlockPath : blocksPath)
-		{
-			LOG_INFO("Started parsing block file: \'{}\'...", kBlockPath);
+        for (const std::wstring& kBlockPath : blocksPath)
+        {
+            LOG_INFO("Started parsing block file: \'{}\'...", kBlockPath);
 
-			// Parse btc file
-			BitcoinReader reader(kBlockPath, kXorPath);
-			BlockFileParser parser(reader);
+            // Parse btc file
+            BitcoinReader reader(kBlockPath, kXorPath);
+            BlockFileParser parser(reader);
 
-			auto kParseResult = parser.parse();
-			if (!kParseResult.has_value())
-				return failMessageLog(kParseResult.error(), "main()");
+            auto kParseResult = parser.parse();
+            if (!kParseResult.has_value())
+                return failMessageLog(kParseResult.error(), "main()");
 
-			std::vector<Block> blocks = std::move(kParseResult).value();
-			LOG_VERBOSE("Successfully parsed block file.");
+            std::vector<Block> blocks = std::move(kParseResult).value();
+            LOG_VERBOSE("Successfully parsed block file.");
 
-			// Output parsing result to file
-			const std::wstring kFileName = std::filesystem::path(kBlockPath).stem();
-			const std::wstring kFilePath = kOutputPath + kFileName + L".json";
-			std::ofstream outFile(kFilePath);
+            // Output parsing result to file
+            const std::wstring kFileName = std::filesystem::path(kBlockPath).stem();
+            const std::wstring kFilePath = kOutputPath + kFileName + L".json";
+            std::ofstream outFile(kFilePath);
 
-			LOG_VERBOSE("Printing results to file...", kBlockPath);
-			for (const Block& block : blocks)
-			{
-				BlockPrinter printer(block, outFile, true);
-				printer.printBlock();
-			}
+            LOG_VERBOSE("Printing results to file...", kBlockPath);
+            for (const Block& block : blocks)
+            {
+                BlockPrinter printer(block, outFile, true);
+                printer.printBlock();
+            }
 
-			LOG_INFO("Parsing is finished successfully. Output results printed in: {}", kOutputPath);
-		}
-	}
-	catch (const std::runtime_error& e)
-	{
-		return failMessageLog(AppErrorCode::RuntimeException, e.what());
-	}
+            LOG_INFO("Parsing is finished successfully. Output results printed in: {}", kOutputPath);
+        }
+    }
+    catch (const std::runtime_error& e)
+    {
+        return failMessageLog(AppErrorCode::RuntimeException, e.what());
+    }
     catch(const std::exception& e)
-	{
-		return failMessageLog(AppErrorCode::UnknownException, e.what());
-	}
-	catch (...)
-	{
-		return failMessageLog(AppErrorCode::UnknownException, "Unknown exception in main()");
-	}
+    {
+        return failMessageLog(AppErrorCode::UnknownException, e.what());
+    }
+    catch (...)
+    {
+        return failMessageLog(AppErrorCode::UnknownException, "Unknown exception in main()");
+    }
 
-	return static_cast<int>(AppErrorCode::Success);
+    return static_cast<int>(AppErrorCode::Success);
 }
