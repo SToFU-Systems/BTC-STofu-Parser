@@ -81,8 +81,13 @@ int wmain(int argc, wchar_t* argv[])
 
 	LOG_INFO("Starting BTC analyzer...");
 
+	constexpr const char* kOutPath = "./btc_1h_data_2018_to_2025.csv";
+	constexpr const char* kCacert = "../../cacert.pem";
+
+	CsvParser csvParser(kOutPath, kCacert);
+
 	// Download CSV with Kaggle
-	if (!DownloadKaggleCsv())
+	if (!csvParser.DownloadKaggleCsv())
 	{
 		LOG_ERROR("Failed to download BTC CSV file.");
 		return -1;
@@ -91,8 +96,7 @@ int wmain(int argc, wchar_t* argv[])
 	LOG_INFO("CSV downloaded successfully.");
 
 	// Download CSV (UTF-8 version)
-	auto result = LoadCsvToMap();
-
+	auto result = csvParser.LoadCsvToMap();
 
 	// Config
 	const AppErrorCode kConfigInitResult = config.init(argc, argv);
