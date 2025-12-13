@@ -76,6 +76,54 @@ namespace
     }
 
     //================================================================================
+    // Function: ripemd160_compute_round
+    // Description: Executes one RIPEMD-160 round (16 steps) for the current "words" state.
+    //================================================================================
+    static void ripemd160_compute_round(
+        IN    const uint32_t* chunk,
+        IN    const std::array<uint8_t, kNumShifts>& shifts,
+        IN    uint8_t fn,
+        IN    uint32_t k,
+        IN    size_t shift_offset,
+        INOUT std::array<uint32_t, kDigestWords>& words,
+        INOUT const std::array<uint8_t, kRoundSize>& index
+    )
+    {
+        constexpr uint32_t kRotateConst = 10U;
+
+        for (uint8_t i = 0; i < kRoundSize; i++)
+        {
+            uint32_t tmp{};
+            switch (fn)
+            {
+            case 1:
+                tmp = words[1] ^ words[2] ^ words[3];
+                break;
+            case 2:
+                tmp = (words[1] & words[2]) | (~words[1] & words[3]);
+                break;
+            case 3:
+                tmp = (words[1] | ~words[2]) ^ words[3];
+                break;
+            case 4:
+                tmp = (words[1] & words[3]) | (words[2] & ~words[3]);
+                break;
+            case 5:
+                tmp = words[1] ^ (words[2] | ~words[3]);
+                break;
+            }
+
+            tmp += words[0] + chunk[index[i]] + k;
+            tmp = ROL(tmp, shifts[shift_offset + index[i]]) + words[4];
+            words[0] = words[4];
+            words[4] = words[3];
+            words[3] = ROL(words[2], kRotateConst);
+            words[2] = words[1];
+            words[1] = tmp;
+        }
+    }
+
+    //================================================================================
     // Function: ripemd160_compute_line
     // Description: Internal function performing one RIPEMD-160 transform line.
     //================================================================================
@@ -101,36 +149,8 @@ namespace
             uint32_t k = ks[round];
             uint8_t  fn = fns[round];
 
-            for (uint8_t i = 0; i < kRoundSize; i++)
-            {
-                uint32_t tmp{};
-                switch (fn)
-                {
-                case 1:
-                    tmp = words[1] ^ words[2] ^ words[3];
-                    break;
-                case 2:
-                    tmp = (words[1] & words[2]) | (~words[1] & words[3]);
-                    break;
-                case 3:
-                    tmp = (words[1] | ~words[2]) ^ words[3];
-                    break;
-                case 4:
-                    tmp = (words[1] & words[3]) | (words[2] & ~words[3]);
-                    break;
-                case 5:
-                    tmp = words[1] ^ (words[2] | ~words[3]);
-                    break;
-                }
+            ripemd160_compute_round( chunk, shifts, fn, k, shift_offset, words, index);
 
-                tmp += words[0] + chunk[index[i]] + k;
-                tmp = ROL(tmp, shifts[shift_offset + index[i]]) + words[4];
-                words[0] = words[4];
-                words[4] = words[3];
-                words[3] = ROL(words[2], kRotateConst);
-                words[2] = words[1];
-                words[1] = tmp;
-            }
             if (round == 4)
                 break;
             shift_offset += kRoundSize;
