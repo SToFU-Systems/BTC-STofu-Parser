@@ -137,8 +137,6 @@ namespace
         OUT   std::array<uint32_t, kDigestWords>& words
     )
     {
-        constexpr uint32_t kRotateConst = 10U;
-
         for (uint8_t i = 0; i < kDigestWords; i++) 
         {
             words[i] = digest[i];
