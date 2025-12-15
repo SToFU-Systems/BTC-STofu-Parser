@@ -137,10 +137,8 @@ namespace
         OUT   std::array<uint32_t, kDigestWords>& words
     )
     {
-        for (uint8_t i = 0; i < kDigestWords; i++) 
-        {
-            words[i] = digest[i];
-        }
+        std::copy_n(digest, kDigestWords, words.begin());
+
         size_t shift_offset = 0;
         for (uint8_t round = 0; /* breaks out mid-loop */; round++)
         {
@@ -151,18 +149,16 @@ namespace
 
             if (round == 4)
                 break;
+
             shift_offset += kRoundSize;
-            std::array<uint8_t, kRoundSize> index_tmp;
+            std::array<uint8_t, kRoundSize> index_tmp{};
 
             for (uint8_t i = 0; i < index_tmp.size(); i++)
             {
                 index_tmp[i] = ripemd160_rho[index[i]];
             }
 
-            for (uint8_t i = 0; i < index_tmp.size(); i++)
-            {
-                index[i] = index_tmp[i];
-            }
+            std::copy_n(index_tmp.begin(), index_tmp.size(), index.begin());
         }
     }
 
@@ -172,12 +168,9 @@ namespace
     //================================================================================
     void ripemd160_update_digest(IN const uint32_t* chunk, INOUT uint32_t* digest)
     {
-        std::array<uint8_t, kRoundSize> index;
+        std::array<uint8_t, kRoundSize> index{};
         //initial permutation for left line is the identity
-        for (uint8_t i = 0; i < index.size(); i++)
-        {
-            index[i] = i;
-        }
+        std::iota(index.begin(), index.end(), uint8_t{ 0 });
 
         std::array<uint32_t, kDigestWords> words_left{};
         ripemd160_compute_line(chunk,  ripemd160_shifts,  ripemd160_constants_left, ripemd160_fns_left, digest, index, words_left);
@@ -241,7 +234,7 @@ void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_
         ptr += kBlockSizeBytes;
     }
 
-    uint8_t last_chunk[kBlockSizeBytes]{};
+    std::array<uint8_t, kBlockSizeBytes> last_chunk{};
     uint8_t leftover_size = data_len & kBlockRemainderMask;
 
     for (uint8_t i = 0; i < leftover_size; i++) 
@@ -252,24 +245,20 @@ void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_
     //append a single 1 bit and then zeroes, leaving 8 bytes for the length at the end
     last_chunk[leftover_size] = kPaddingByte;
 
-    for (uint8_t i = leftover_size + 1; i < kBlockSizeBytes; i++)
+    std::fill_n(last_chunk.data() + (leftover_size + 1), kBlockSizeBytes - (leftover_size + 1), uint8_t{ 0 });
+
+    if (leftover_size >= kLengthLswOffset) 
     {
-        last_chunk[i] = 0;
-    }
-
-    if (leftover_size >= kLengthLswOffset) {
         //no room for size in this chunk, add another chunk of zeroes
-        ripemd160_update_digest(reinterpret_cast<uint32_t*>(last_chunk), digest);
-        for (uint8_t i = 0; i < kLengthLswOffset; i++)
-        {
-            last_chunk[i] = 0;
-        }
+        ripemd160_update_digest(reinterpret_cast<uint32_t*>(last_chunk.data()), digest);
+
+        std::fill_n(last_chunk.data(), kLengthLswOffset, uint8_t{0});
     }
 
-    uint32_t* length_lsw = reinterpret_cast<uint32_t*>(last_chunk + kLengthLswOffset);
+    uint32_t* length_lsw = reinterpret_cast<uint32_t*>(last_chunk.data() + kLengthLswOffset);
     *length_lsw = (data_len << kLowLengthShift);
-    uint32_t* length_msw = reinterpret_cast<uint32_t*>(last_chunk + kLengthMswOffset);
+    uint32_t* length_msw = reinterpret_cast<uint32_t*>(last_chunk.data() + kLengthMswOffset);
     *length_msw = (data_len >> kHighLengthShift);
 
-    ripemd160_update_digest(reinterpret_cast<uint32_t*>(last_chunk), digest);
+    ripemd160_update_digest(reinterpret_cast<uint32_t*>(last_chunk.data()), digest);
 }
