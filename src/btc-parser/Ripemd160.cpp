@@ -36,13 +36,13 @@ namespace
     constexpr size_t kRoundSize = 16ULL;
     constexpr size_t kNumShifts = 80ULL;
 
-    constexpr std::array<uint32_t, kDigestWords> ripemd160_initial_digest =
+    constexpr std::array<uint32_t, kDigestWords> kInitialDigest =
     { 0x67452301UL, 0xefcdab89UL, 0x98badcfeUL, 0x10325476UL, 0xc3d2e1f0UL };
 
-    constexpr std::array<uint8_t, kRoundSize> ripemd160_rho =
+    constexpr std::array<uint8_t, kRoundSize> kRho =
     { 0x7, 0x4, 0xd, 0x1, 0xa, 0x6, 0xf, 0x3, 0xc, 0x0, 0x9, 0x5, 0x2, 0xe, 0xb, 0x8 };
 
-    constexpr std::array<uint8_t, kNumShifts> ripemd160_shifts =
+    constexpr std::array<uint8_t, kNumShifts> kShifts =
     { 11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8
     , 12, 13, 11, 15, 6, 9, 9, 7, 12, 15, 11, 13, 7, 8, 7, 7
     , 13, 15, 14, 11, 7, 7, 6, 8, 13, 14, 13, 12, 5, 5, 6, 9
@@ -50,14 +50,14 @@ namespace
     , 15, 12, 13, 13, 9, 5, 8, 6, 14, 11, 12, 11, 8, 6, 5, 5
     };
 
-    constexpr std::array<uint32_t, kDigestWords> ripemd160_constants_left =
+    constexpr std::array<uint32_t, kDigestWords> kConstantsLeft =
     { 0x00000000UL, 0x5a827999UL, 0x6ed9eba1UL, 0x8f1bbcdcUL, 0xa953fd4eUL };
 
-    constexpr std::array<uint32_t, kDigestWords> ripemd160_constants_right =
+    constexpr std::array<uint32_t, kDigestWords> kConstantsRight =
     { 0x50a28be6UL, 0x5c4dd124UL, 0x6d703ef3UL, 0x7a6d76e9UL, 0x00000000UL };
 
-    constexpr std::array<uint8_t, kDigestWords> ripemd160_fns_left = { 1, 2, 3, 4, 5 };
-    constexpr std::array<uint8_t, kDigestWords> ripemd160_fns_right = { 5, 4, 3, 2, 1 };
+    constexpr std::array<uint8_t, kDigestWords> kFnsLeft = { 1, 2, 3, 4, 5 };
+    constexpr std::array<uint8_t, kDigestWords> kFnsRight = { 5, 4, 3, 2, 1 };
 
 
 
@@ -155,7 +155,7 @@ namespace
 
             for (size_t i = 0; i < index_tmp.size(); i++)
             {
-                index_tmp[i] = ripemd160_rho[index[i]];
+                index_tmp[i] = kRho[index[i]];
             }
 
             std::copy_n(index_tmp.begin(), index_tmp.size(), index.begin());
@@ -178,7 +178,7 @@ namespace
         std::iota(index.begin(), index.end(), uint8_t{ 0 });
 
         std::array<uint32_t, kDigestWords> words_left{};
-        ripemd160_compute_line(chunk,  ripemd160_shifts,  ripemd160_constants_left, ripemd160_fns_left, digest, index, words_left);
+        ripemd160_compute_line(chunk,  kShifts,  kConstantsLeft, kFnsLeft, digest, index, words_left);
 
         //initial permutation for right line is 5+9i (mod 16)
         index[0] = kRightIndexStart;
@@ -189,7 +189,7 @@ namespace
         }
 
         std::array<uint32_t, kDigestWords> words_right{};
-        ripemd160_compute_line(chunk, ripemd160_shifts, ripemd160_constants_right, ripemd160_fns_right, digest, index, words_right);
+        ripemd160_compute_line(chunk, kShifts, kConstantsRight, kFnsRight, digest, index, words_right);
 
         //update digest
         for (size_t i = 0; i < kDigestWords; ++i)
@@ -224,7 +224,7 @@ void RIPEMD160T(IN std::span<const uint8_t> data, OUT std::span<uint8_t> digest_
     //NB assumes correct endianness
     uint32_t* digest = reinterpret_cast<uint32_t*>(digest_bytes.data());
 
-    std::copy_n(ripemd160_initial_digest.begin(), kDigestWords, digest);
+    std::copy_n(kInitialDigest.begin(), kDigestWords, digest);
 
     const uint8_t* last_chunk_start = data.data() + (data_len & (~kBlockRemainderMask));
     const uint8_t* ptr = data.data();
