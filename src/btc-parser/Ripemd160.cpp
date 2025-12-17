@@ -153,7 +153,7 @@ namespace
             shift_offset += kRoundSize;
             std::array<uint8_t, kRoundSize> index_tmp{};
 
-            for (uint8_t i = 0; i < index_tmp.size(); i++)
+            for (size_t i = 0; i < index_tmp.size(); i++)
             {
                 index_tmp[i] = ripemd160_rho[index[i]];
             }
@@ -168,7 +168,12 @@ namespace
     //================================================================================
     void ripemd160_update_digest(IN const uint32_t* chunk, INOUT uint32_t* digest)
     {
+        constexpr uint8_t kRightIndexStart = 5U;
+        constexpr uint8_t kRightIndexStep = 9U;
+        constexpr uint8_t kIndexModMask = 0x0fU;
+
         std::array<uint8_t, kRoundSize> index{};
+
         //initial permutation for left line is the identity
         std::iota(index.begin(), index.end(), uint8_t{ 0 });
 
@@ -176,11 +181,11 @@ namespace
         ripemd160_compute_line(chunk,  ripemd160_shifts,  ripemd160_constants_left, ripemd160_fns_left, digest, index, words_left);
 
         //initial permutation for right line is 5+9i (mod 16)
-        index[0] = 5;
+        index[0] = kRightIndexStart;
 
-        for (uint8_t i = 1; i < index.size(); i++)
+        for (size_t i = 1; i < index.size(); i++)
         {
-            index[i] = (index[i - 1] + 9) & 0x0f;
+            index[i] = (index[i - 1] + kRightIndexStep) & kIndexModMask;
         }
 
         std::array<uint32_t, kDigestWords> words_right{};
@@ -189,16 +194,11 @@ namespace
         //update digest
         for (size_t i = 0; i < kDigestWords; ++i)
         {
-            digest[i] += words_left[(i + 1) % 5] + words_right[(i + 2) % 5];
+            digest[i] += words_left[(i + 1) % kDigestWords] + words_right[(i + 2) % kDigestWords];
         }
 
         //final rotation
-        words_left[0] = digest[0];
-        digest[0] = digest[1];
-        digest[1] = digest[2];
-        digest[2] = digest[3];
-        digest[3] = digest[4];
-        digest[4] = words_left[0];
+        std::rotate(digest, digest + 1, digest + kDigestWords);
     }
 }
 
