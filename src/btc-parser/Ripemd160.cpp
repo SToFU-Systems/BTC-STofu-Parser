@@ -91,7 +91,7 @@ namespace
     {
         constexpr uint32_t kRotateConst = 10U;
 
-        for (uint8_t i = 0; i < kRoundSize; i++)
+        for (size_t i = 0; i < kRoundSize; i++)
         {
             uint32_t tmp{};
             switch (fn)
@@ -140,14 +140,14 @@ namespace
         std::copy_n(digest, kDigestWords, words.begin());
 
         size_t shift_offset = 0;
-        for (uint8_t round = 0; /* breaks out mid-loop */; round++)
+        for (size_t round = 0; /* breaks out mid-loop */; round++)
         {
             uint32_t k = ks[round];
             uint8_t  fn = fns[round];
 
             ripemd160_compute_round( chunk, shifts, fn, k, shift_offset, words, index);
 
-            if (round == 4)
+            if (round == kDigestWords - 1)
                 break;
 
             shift_offset += kRoundSize;
