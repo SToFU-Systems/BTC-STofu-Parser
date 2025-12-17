@@ -79,7 +79,7 @@ namespace
     // Function: ripemd160_compute_round
     // Description: Executes one RIPEMD-160 round (16 steps) for the current "words" state.
     //================================================================================
-    static void ripemd160_compute_round(
+    void ripemd160_compute_round(
         IN    const uint32_t* chunk,
         IN    const std::array<uint8_t, kNumShifts>& shifts,
         IN    uint8_t fn,
