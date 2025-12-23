@@ -65,7 +65,7 @@ namespace
     // Function: ROL
     // Description: Performs a 32-bit rotate-left operation on the given value.
     //================================================================================
-    constexpr uint32_t ROL(IN uint32_t x, IN uint32_t n)
+    constexpr uint32_t ROL(IN const uint32_t x, IN const uint32_t n)
     {
         constexpr uint32_t kWordBits = 32U;
 
@@ -82,11 +82,11 @@ namespace
     void ripemd160_compute_round(
         IN    const uint32_t* chunk,
         IN    const std::array<uint8_t, kNumShifts>& shifts,
-        IN    uint8_t fn,
-        IN    uint32_t k,
-        IN    size_t shift_offset,
-        INOUT std::array<uint32_t, kDigestWords>& words,
-        INOUT const std::array<uint8_t, kRoundSize>& index
+        IN    const uint8_t fn,
+        IN    const uint32_t k,
+        IN    const size_t shift_offset,
+        IN    const std::array<uint8_t, kRoundSize>& index,
+        INOUT std::array<uint32_t, kDigestWords>& words
     )
     {
         constexpr uint32_t kRotateConst = 10U;
@@ -145,7 +145,7 @@ namespace
             uint32_t k = ks[round];
             uint8_t  fn = fns[round];
 
-            ripemd160_compute_round( chunk, shifts, fn, k, shift_offset, words, index);
+            ripemd160_compute_round( chunk, shifts, fn, k, shift_offset, index, words );
 
             if (round == kDigestWords - 1)
                 break;
