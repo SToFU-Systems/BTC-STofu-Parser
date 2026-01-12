@@ -12,6 +12,8 @@
 #include "Logger.hpp"
 #include "SingleBlockParser.h"
 #include "Utils.h"
+#include "CsvParser.h"
+#include "CurlUtils.h"
 
 Config config;
 
@@ -74,6 +76,28 @@ int wmain(int argc, wchar_t* argv[])
         return failMessage(AppErrorCode::LoggerInitFailure,
             "Failed to initialize logger");
 
+    // Anotation CurlGlobal RAII
+    CurlGlobal::instance();
+
+    LOG_INFO("Starting BTC analyzer...");
+
+    constexpr const char* kOutPath = "../../output/btc_1h_data_2018_to_2025.csv";
+    constexpr const char* kCacert = "../../cacert.pem";
+
+    CsvParser csvParser(kOutPath, kCacert);
+
+    // Download CSV with Kaggle
+    if (!csvParser.DownloadKaggleCsv())
+    {
+        LOG_ERROR("Failed to download BTC CSV file.");
+        return -1;
+    }
+
+    LOG_INFO("CSV downloaded successfully.");
+
+    // Download CSV (UTF-8 version)
+    auto result = csvParser.LoadCsvToMap();
+
     // Config
     const AppErrorCode kConfigInitResult = config.init(argc, argv);
     if (kConfigInitResult != AppErrorCode::Success)
@@ -101,9 +125,9 @@ int wmain(int argc, wchar_t* argv[])
             auto kParseResult = parser.parse();
             if (!kParseResult.has_value())
                 return failMessageLog(kParseResult.error(), "main()");
-            
+
             std::vector<Block> blocks = std::move(kParseResult).value();
-            LOG_VERBOSE("Successfully parsed block file."); 
+            LOG_VERBOSE("Successfully parsed block file.");
 
             // Output parsing result to file
             const std::wstring kFileName = std::filesystem::path(kBlockPath).stem();

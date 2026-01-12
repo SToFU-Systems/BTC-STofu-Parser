@@ -83,8 +83,8 @@
     <IntDir>$(SolutionDir)_bin\$(Platform)_$(Configuration)\_obj\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)_bin\$(Platform)_$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)_bin\$(Platform)_$(Configuration)\_obj\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)_bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)_obj\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -122,6 +122,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(ProjectDir)/;..\..\3rd-party\spdlog\include\;..\..\3rd-party\libpqxx\include\;..\..\3rd-party\PostgreSQL17\include\</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,8 +155,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -166,22 +167,35 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(ProjectDir)/;..\..\3rd-party\spdlog\include\;..\..\3rd-party\libpqxx\include\;..\..\3rd-party\PostgreSQL17\include\</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\..\3rd-party\spdlog\lib\$(Platform)\$(Configuration)\;..\..\3rd-party\libpqxx\lib;..\..\3rd-party\PostgreSQL17\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>libpq.lib;pqxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OptimizeReferences>false</OptimizeReferences>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)..\..\3rd-party\DependenciesDll\*" "$(SolutionDir)_bin\$(Platform)\$(Configuration)\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BitcoinReader.cpp" />
     <ClCompile Include="BlockFileParser.cpp" />
     <ClCompile Include="BlockHeaderParser.cpp" />
+    <ClCompile Include="CsvParser.cpp" />
+    <ClCompile Include="CurlUtils.cpp" />
     <ClCompile Include="database\PostgreQueryCommands.cpp" />
     <ClCompile Include="database\TransactionsDbPostgreSql.cpp" />
     <ClCompile Include="JsonUtils.cpp" />
     <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="Ripemd160.cpp" />
     <ClCompile Include="SingleBlockParser.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="BlockPrinter.cpp" />
@@ -205,6 +219,8 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="BlockPrinter.h" />
+    <ClInclude Include="CsvParser.h" />
+    <ClInclude Include="CurlUtils.h" />
     <ClInclude Include="database\IDatabase.h" />
     <ClInclude Include="database\ITransactionDatabase.h" />
     <ClInclude Include="database\PostgreQueryCommands.h" />
@@ -214,6 +230,7 @@
     <ClInclude Include="JsonUtils.h" />
     <ClInclude Include="Logger.hpp" />
     <ClInclude Include="LoggerUtils.h" />
+    <ClInclude Include="Ripemd160.h" />
     <ClInclude Include="SingleBlockParser.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="TransactionParser.h" />
@@ -225,18 +242,16 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\openssl-vc140-static-32_64.1.1.1.1\build\native\openssl-vc140-static-32_64.targets" Condition="Exists('packages\openssl-vc140-static-32_64.1.1.1.1\build\native\openssl-vc140-static-32_64.targets')" />
-    <Import Project="packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets" Condition="Exists('packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets')" />
-    <Import Project="packages\curl-vc140-static-32_64.7.53.0\build\native\curl-vc140-static-32_64.targets" Condition="Exists('packages\curl-vc140-static-32_64.7.53.0\build\native\curl-vc140-static-32_64.targets')" />
-    <Import Project="packages\boost.1.87.0\build\boost.targets" Condition="Exists('packages\boost.1.87.0\build\boost.targets')" />
+    <Import Project="$(SolutionDir)packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets" Condition="Exists('$(SolutionDir)packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets')" />
+    <Import Project="$(SolutionDir)packages\boost.1.87.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.87.0\build\boost.targets')" />
+    <Import Project="$(SolutionDir)packages\curl-static.1.0.6\build\native\curl-static.targets" Condition="Exists('$(SolutionDir)packages\curl-static.1.0.6\build\native\curl-static.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\openssl-vc140-static-32_64.1.1.1.1\build\native\openssl-vc140-static-32_64.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl-vc140-static-32_64.1.1.1.1\build\native\openssl-vc140-static-32_64.targets'))" />
-    <Error Condition="!Exists('packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets'))" />
-    <Error Condition="!Exists('packages\curl-vc140-static-32_64.7.53.0\build\native\curl-vc140-static-32_64.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\curl-vc140-static-32_64.7.53.0\build\native\curl-vc140-static-32_64.targets'))" />
-    <Error Condition="!Exists('packages\boost.1.87.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost.1.87.0\build\boost.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\nlohmann.json.3.12.0\build\native\nlohmann.json.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\boost.1.87.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost.1.87.0\build\boost.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\curl-static.1.0.6\build\native\curl-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\curl-static.1.0.6\build\native\curl-static.targets'))" />
   </Target>
 </Project>

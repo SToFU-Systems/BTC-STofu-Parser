@@ -1,4 +1,13 @@
 _bin/
+_obj/
 packages/
 .vs/
 *.dat
+
+# Logs
+/log/
+/log/*.txt
+
+# Parsed/exported CSV data
+/src/btc-parser/*.csv
+*.csv
