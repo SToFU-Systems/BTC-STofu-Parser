@@ -35,9 +35,15 @@ URLS: list[str] = [
     "https://en.wikipedia.org/wiki/World_War_II",
     "https://en.wikipedia.org/wiki/Blockchain",
     "https://en.wikipedia.org/wiki/Neural_network",
+    "https://en.wikipedia.org/wiki/Mark_Antony",
+    "https://en.wikipedia.org/wiki/Client_state",
+    "https://en.wikipedia.org/wiki/Demetrius_of_Pharos",
+    "https://en.wikipedia.org/wiki/Epidamnos",
+    "https://en.wikipedia.org/wiki/Peloponnesian_War",
 ]
 
-
+# нужно почитать нужно ли 1 или можна 3 юзера агента поставить.
+# посмотреть где скрывает окна браузера
 CUSTOM_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
