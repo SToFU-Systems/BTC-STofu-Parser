@@ -1,6 +1,8 @@
 _bin/
 _obj/
 packages/
+python_scripts/selenium_output/
+python_scripts/serpapi_output/
 .vs/
 *.dat
 
