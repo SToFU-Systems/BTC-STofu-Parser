@@ -1,112 +1,103 @@
-﻿from __future__ import annotations
+﻿# file: save_pages_multi_tabs.py
+"""
+Requirements:
+  pip install playwright
+  playwright install chromium
 
-import json
+This script:
+- Launches Chrome/Chromium
+- Sets a custom User-Agent
+- Opens N tabs at once for N URLs
+- Loads all pages concurrently in one session
+- Saves each page's full HTML to its own .html file
+- Closes each tab only after saving
+- Shuts down the browser cleanly
+"""
+
+from __future__ import annotations
+
+import asyncio
 import re
-import time
-from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
-    
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
+from typing import Iterable
+
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
 
-URLS = [
-    "https://en.wikipedia.org/wiki/Python_(programming_language)",
-    "https://en.wikipedia.org/wiki/Selenium_(software)",
-    "https://en.wikipedia.org/wiki/Web_browser",
+URLS: list[str] = [
     "https://en.wikipedia.org/wiki/Artificial_intelligence",
+    "https://en.wikipedia.org/wiki/Quantum_mechanics",
+    "https://en.wikipedia.org/wiki/Mount_Everest",
+    "https://en.wikipedia.org/wiki/Roman_Empire",
+    "https://en.wikipedia.org/wiki/Black_hole",
+    "https://en.wikipedia.org/wiki/Photosynthesis",
+    "https://en.wikipedia.org/wiki/Leonardo_da_Vinci",
+    "https://en.wikipedia.org/wiki/World_War_II",
+    "https://en.wikipedia.org/wiki/Blockchain",
+    "https://en.wikipedia.org/wiki/Neural_network",
 ]
 
-OUT_DIR = Path("selenium_output")
-OUT_DIR.mkdir(parents=True, exist_ok=True)
-RESULTS_FILE = OUT_DIR / "results.jsonl"
+
+CUSTOM_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/121.0.0.0 Safari/537.36 MyCustomAgent/1.0"
+)
+
+OUTPUT_DIR = Path("selenium_output")
+NAV_TIMEOUT_MS = 45_000  # per page navigation timeout
 
 
-def safe_name_from_url(url: str) -> str:
-    p = urlparse(url)
-    host = p.netloc or "site"
-    path = p.path.strip("/").replace("/", "_") or "root"
-    path = re.sub(r"[^a-zA-Z0-9._-]+", "_", path)
-    return f"{host}__{path}"
+def _safe_filename(s: str, max_len: int = 140) -> str:
+    s = s.strip().lower()
+    s = re.sub(r"^https?://", "", s)
+    s = re.sub(r"[^\w\-\.]+", "_", s)
+    s = re.sub(r"_+", "_", s).strip("_")
+    return (s[:max_len] or "page") + ".html"
 
 
-def build_driver() -> webdriver.Chrome:
-    opts = Options()
-    # opts.add_argument("--headless=new")  # если нужно без окна
-    opts.add_argument("--start-maximized")
-    opts.add_argument("--disable-gpu")
-    opts.add_argument("--no-sandbox")
-
-    driver = webdriver.Chrome(options=opts)
-    driver.set_page_load_timeout(60)
-    return driver
-
-
-def wait_dom_ready(driver: webdriver.Chrome, timeout_sec: int = 30) -> None:
-    WebDriverWait(driver, timeout_sec).until(
-        lambda d: d.execute_script("return document.readyState") == "complete"
-    )
-
-
-def save_html(out_path: Path, html: str) -> None:
-    out_path.write_text(html, encoding="utf-8", errors="ignore")
-
-
-def append_log(entry: dict) -> None:
-    with RESULTS_FILE.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-
-
-def main() -> None:
-    driver = build_driver()
-    base_handle = driver.current_window_handle
-
+async def _fetch_save_close(page, url: str, out_path: Path) -> None:
     try:
-        # 1) открываем вкладки (пустые)
-        for _ in range(len(URLS) - 1):
-            driver.switch_to.new_window("tab")
+        await page.goto(url, wait_until="networkidle", timeout=NAV_TIMEOUT_MS)
+    except PlaywrightTimeoutError:
+        # Still try to capture whatever loaded so far
+        pass
 
-        handles = driver.window_handles  # их стало len(URLS)
+    html = await page.content()
+    out_path.write_text(html, encoding="utf-8")
+    await page.close()
 
-        # 2) по каждой вкладке: перейти на URL, дождаться загрузки, сохранить HTML, закрыть вкладку
-        for handle, url in zip(handles, URLS):
-            started = time.time()
-            entry = {
-                "ts": datetime.now(timezone.utc).isoformat(),
-                "url": url,
-                "ok": False,
-                "file": None,
-                "error": None,
-            }
 
-            try:
-                driver.switch_to.window(handle)
-                driver.get(url)
-                wait_dom_ready(driver, timeout_sec=30)
+async def main(urls: Iterable[str]) -> None:
+    urls = list(urls)
+    if not urls:
+        raise SystemExit("No URLs provided in URLS list.")
 
-                name = safe_name_from_url(url)
-                html_path = OUT_DIR / f"{name}.html"
-                save_html(html_path, driver.page_source)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-                entry["ok"] = True
-                entry["file"] = str(html_path)
-            except Exception as e:
-                entry["error"] = f"{type(e).__name__}: {e}"
-            finally:
-                entry["elapsed_sec"] = round(time.time() - started, 3)
-                append_log(entry)
+    async with async_playwright() as p:
+        # "channel='chrome'" uses installed Chrome if available; otherwise Playwright falls back to Chromium.
+        browser = await p.chromium.launch(channel="chrome", headless=True)
 
-                if handle != base_handle:
-                    try:
-                        driver.close()
-                    except Exception:
-                        pass
+        context = await browser.new_context(
+            user_agent=CUSTOM_USER_AGENT,
+        )
 
-    finally:
-        driver.quit()
+        # 1) Open ALL tabs first (must match URL count).
+        pages = [await context.new_page() for _ in urls]
+
+        # 2) Navigate + save + close each tab concurrently.
+        tasks = []
+        for i, (page, url) in enumerate(zip(pages, urls), start=1):
+            filename = f"{i:03d}_{_safe_filename(url)}"
+            out_path = OUTPUT_DIR / filename
+            tasks.append(_fetch_save_close(page, url, out_path))
+
+        await asyncio.gather(*tasks)
+
+        await context.close()
+        await browser.close()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main(URLS))
