@@ -1,8 +1,8 @@
 ﻿# file: save_pages_multi_tabs.py
 """
 Requirements:
-  pip install playwright
-  playwright install chromium
+  py -m pip install playwright
+  py -m playwright install chromium
 
 This script:
 - Launches Chrome/Chromium
@@ -12,35 +12,20 @@ This script:
 - Saves each page's full HTML to its own .html file
 - Closes each tab only after saving
 - Shuts down the browser cleanly
+
+URLs source:
+- reads from queries.json рядом со скриптом (JSON array of strings)
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 from pathlib import Path
 from typing import Iterable
 
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
-
-
-URLS: list[str] = [
-    "https://en.wikipedia.org/wiki/Artificial_intelligence",
-    "https://en.wikipedia.org/wiki/Quantum_mechanics",
-    "https://en.wikipedia.org/wiki/Mount_Everest",
-    "https://en.wikipedia.org/wiki/Roman_Empire",
-    "https://en.wikipedia.org/wiki/Black_hole",
-    "https://en.wikipedia.org/wiki/Photosynthesis",
-    "https://en.wikipedia.org/wiki/Leonardo_da_Vinci",
-    "https://en.wikipedia.org/wiki/World_War_II",
-    "https://en.wikipedia.org/wiki/Blockchain",
-    "https://en.wikipedia.org/wiki/Neural_network",
-    "https://en.wikipedia.org/wiki/Mark_Antony",
-    "https://en.wikipedia.org/wiki/Client_state",
-    "https://en.wikipedia.org/wiki/Demetrius_of_Pharos",
-    "https://en.wikipedia.org/wiki/Epidamnos",
-    "https://en.wikipedia.org/wiki/Peloponnesian_War",
-]
 
 # нужно почитать нужно ли 1 или можна 3 юзера агента поставить.
 # посмотреть где скрывает окна браузера
@@ -52,6 +37,34 @@ CUSTOM_USER_AGENT = (
 
 OUTPUT_DIR = Path("selenium_output")
 NAV_TIMEOUT_MS = 45_000  # per page navigation timeout
+LINKS_JSON = Path(__file__).with_name("queries.json")
+
+
+def load_urls() -> list[str]:
+    if not LINKS_JSON.exists():
+        raise SystemExit(f"Не найден файл: {LINKS_JSON}\nСоздай queries.json рядом со скриптом.")
+
+    try:
+        data = json.loads(LINKS_JSON.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"queries.json невалидный JSON: {e}")
+
+    if not isinstance(data, list) or not all(isinstance(u, str) for u in data):
+        raise SystemExit("queries.json должен быть JSON-массивом строк (список ссылок).")
+
+    urls = [u.strip() for u in data if u.strip()]
+    if not urls:
+        raise SystemExit("queries.json пустой: нет ссылок.")
+
+    # уберём дубликаты, сохранив порядок
+    seen = set()
+    uniq: list[str] = []
+    for u in urls:
+        if u not in seen:
+            seen.add(u)
+            uniq.append(u)
+
+    return uniq
 
 
 def _safe_filename(s: str, max_len: int = 140) -> str:
@@ -77,7 +90,7 @@ async def _fetch_save_close(page, url: str, out_path: Path) -> None:
 async def main(urls: Iterable[str]) -> None:
     urls = list(urls)
     if not urls:
-        raise SystemExit("No URLs provided in URLS list.")
+        raise SystemExit("No URLs provided.")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -106,4 +119,4 @@ async def main(urls: Iterable[str]) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main(URLS))
+    asyncio.run(main(load_urls()))

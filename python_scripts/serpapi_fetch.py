@@ -1,8 +1,8 @@
-﻿# file: serpapi_fetch.py
+# file: serpapi_fetch.py
 """
 Requirements:
-  pip install playwright httpx
-  playwright install chromium
+  py -m pip install playwright httpx
+  py -m playwright install chromium
 
 This script:
 - Calls SerpApi to get organic result URLs for each query
@@ -18,11 +18,15 @@ Setup (PowerShell):
 
 Setup (bash/zsh):
   export SERPAPI_KEY="YOUR_KEY"
+
+Queries source:
+  queries.json ����� �� �������� (JSON array of strings)
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 from pathlib import Path
@@ -31,11 +35,6 @@ from typing import Any, Iterable
 import httpx
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
-
-QUERIES: list[str] = [
-    "Artificial intelligence wikipedia",
-    "Quantum mechanics wikipedia",
-]
 
 SERPAPI_BASE_URL = "https://serpapi.com/search.json"
 SERP_ENGINE = "google"
@@ -50,6 +49,29 @@ CUSTOM_USER_AGENT = (
 
 OUTPUT_DIR = Path("serpapi_output")
 NAV_TIMEOUT_MS = 45_000  # per page navigation timeout
+QUERIES_JSON = Path(__file__).with_name("queries.json")
+
+
+def load_urls() -> list[str]:
+    if not QUERIES_JSON.exists():
+        raise SystemExit(f"Не найден файл: {QUERIES_JSON}")
+
+    data = json.loads(QUERIES_JSON.read_text(encoding="utf-8"))
+
+    if not isinstance(data, list) or not all(isinstance(x, str) for x in data):
+        raise SystemExit("queries.json должен быть списком ссылок")
+
+    urls = [u.strip() for u in data if u.strip()]
+
+    # убираем дубликаты
+    seen = set()
+    uniq = []
+    for u in urls:
+        if u not in seen:
+            seen.add(u)
+            uniq.append(u)
+
+    return uniq
 
 
 def _safe_filename(s: str, max_len: int = 140) -> str:
@@ -124,9 +146,7 @@ async def _save_urls_multi_tabs(urls: Iterable[str], out_dir: Path) -> None:
     async with async_playwright() as p:
         browser = await p.chromium.launch(channel="chrome", headless=True)
 
-        context = await browser.new_context(
-            user_agent=CUSTOM_USER_AGENT,
-        )
+        context = await browser.new_context(user_agent=CUSTOM_USER_AGENT)
 
         pages = [await context.new_page() for _ in urls]
 
@@ -142,19 +162,15 @@ async def _save_urls_multi_tabs(urls: Iterable[str], out_dir: Path) -> None:
         await browser.close()
 
 
-async def main(queries: Iterable[str]) -> None:
-    queries = [q.strip() for q in queries if q.strip()]
-    if not queries:
-        raise SystemExit("No queries provided in QUERIES list.")
+async def main(urls: Iterable[str]) -> None:
+    urls = [u.strip() for u in urls if u.strip()]
+    if not urls:
+        raise SystemExit("No URLs provided.")
 
-    api_key = _require_serpapi_key()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    for query in queries:
-        urls = await _serpapi_links(query, api_key)
-        query_dir = OUTPUT_DIR / _safe_dirname(query)
-        await _save_urls_multi_tabs(urls, query_dir)
+    await _save_urls_multi_tabs(urls, OUTPUT_DIR)
 
 
 if __name__ == "__main__":
-    asyncio.run(main(QUERIES))
+    asyncio.run(main(load_urls()))
