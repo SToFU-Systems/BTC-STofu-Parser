@@ -1,93 +1,198 @@
-# btc-analyzer
+# BTC-STofu-Parser
 
+BTC-STofu-Parser is a Windows C++ parser for raw Bitcoin Core block files. It reads `blk*.dat` files, parses block headers and transactions, classifies common transaction script/address forms, and writes the parsed result as JSON.
 
+The project was imported from an internal `btc-analyzer` codebase and currently targets Visual Studio on Windows.
 
-## Getting started
+## What It Does
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- Reads Bitcoin block files from a configured directory.
+- Supports Bitcoin Core XOR-obfuscated block data through `xor.dat`.
+- Parses block metadata: block hash, version, previous block hash, Merkle root, timestamp, bits, and nonce.
+- Parses transactions, including version, inputs, outputs, lock time, transaction hashes, and SegWit witness data.
+- Detects common Bitcoin script forms, including P2PKH, P2SH, SegWit, and Taproot-style outputs where implemented in the parser.
+- Exports parsed blocks to formatted JSON files.
+- Provides logging through `spdlog`.
+- Contains an experimental PostgreSQL transaction database layer based on `libpqxx`.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Repository Layout
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+```text
+.
+|-- 3rd-party/
+|   |-- PostgreSQL17/
+|   |-- libpqxx/
+|   `-- spdlog/
+|-- resources/
+|   |-- blocks/
+|   |-- about_blocks.txt
+|   `-- config.json
+|-- src/btc-parser/
+|   |-- btc-parser.sln
+|   |-- btc-parser.vcxproj
+|   |-- main.cpp
+|   |-- *Parser.cpp / *Parser.h
+|   |-- JsonUtils.cpp / JsonUtils.h
+|   |-- Logger.cpp / Logger.hpp
+|   `-- database/
+|-- notes.txt
+`-- README.md
 ```
-cd existing_repo
-git remote add origin https://git.stofu.io/crypto/btc-analyzer.git
-git branch -M master
-git push -uf origin master
+
+## Requirements
+
+- Windows.
+- Visual Studio 2022 or compatible MSVC toolchain.
+- MSVC v143 platform toolset.
+- Windows 10 SDK.
+- C++23 support.
+- x64 Release build is the currently expected working configuration.
+
+The Visual Studio project references these dependencies:
+
+- `nlohmann.json` 3.12.0 via NuGet.
+- Boost 1.87.0 via NuGet.
+- OpenSSL 1.1.1.1 via NuGet.
+- `curl-vc140-static-32_64` via NuGet.
+- `spdlog` from `3rd-party/spdlog`.
+- `libpqxx` from `3rd-party/libpqxx`.
+- PostgreSQL client libraries from `3rd-party/PostgreSQL17`.
+
+## Build
+
+Open the solution:
+
+```text
+src/btc-parser/btc-parser.sln
 ```
 
-## Integrate with your tools
+Recommended configuration:
 
-- [ ] [Set up project integrations](http://git.stofu.io/crypto/btc-analyzer/-/settings/integrations)
+```text
+Release | x64
+```
 
-## Collaborate with your team
+The historical project notes say `Release x64` is the safe default while the bundled `pqxx`/PostgreSQL dependency is present. `Debug x64` may require dependency cleanup or additional local setup.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+From a Visual Studio Developer PowerShell, the build should look like:
 
-## Test and Deploy
+```powershell
+msbuild src/btc-parser/btc-parser.sln /p:Configuration=Release /p:Platform=x64
+```
 
-Use the built-in continuous integration in GitLab.
+## Configuration
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+The application expects one command-line argument: a path to a JSON config file.
 
-***
+Example config:
 
-# Editing this README
+```json
+{
+  "BlockDirectory": "../../resources/blocks/",
+  "XorDirectory": "../../resources/xor.dat",
+  "OutputDirectory": "../../output/"
+}
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+Fields:
 
-## Suggestions for a good README
+- `BlockDirectory`: directory containing `blk*.dat` files or sample block files.
+- `XorDirectory`: path to `xor.dat` for Bitcoin Core XOR-obfuscated blocks. Leave empty or point to a non-used value only when parsing non-obfuscated sample data.
+- `OutputDirectory`: directory where JSON files will be written.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Make sure `output` and `log` directories exist before running. The current code initializes logs under `../../log/` relative to the executable working directory.
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Place input block files in the configured block directory, then run:
+
+```powershell
+btc-parser.exe path\to\config.json
+```
+
+With the repository sample config, a Visual Studio run can use:
+
+```text
+resources/config.json
+```
+
+For every parsed input block file, the tool writes a JSON file named after the block file stem:
+
+```text
+output/<block-file-name>.json
+```
+
+## Input Data Notes
+
+See `resources/about_blocks.txt` for the current sample-data notes.
+
+Important behavior:
+
+- Bitcoin Core `blk00000` / `blk00317` style files require `xor.dat` when they are stored in XOR-obfuscated form.
+- The included `blk_example` sample is described as a witness-containing block and should be parsed without `xor.dat`.
+- `xor.dat` handling is wired through `BitcoinReader` in `main.cpp`.
+
+## Output
+
+The main executable currently writes JSON. Each block output includes data such as:
+
+- current block hash.
+- block header fields.
+- transactions.
+- transaction hashes.
+- inputs and previous transaction references.
+- outputs and satoshi values.
+- script signatures and script public keys.
+- derived input/output addresses where the parser recognizes the script pattern.
+- witness data for SegWit transactions.
+
+## Database Layer
+
+The repository contains an experimental PostgreSQL transaction database layer under `src/btc-parser/database`.
+
+It includes:
+
+- `IDatabase` and `ITransactionDatabase` interfaces.
+- `TransactionDbData` model.
+- `libpqxx`-based `TransactionDbPostgreSql` implementation.
+- PostgreSQL query command helpers.
+
+Current status: database functionality appears focused on transactions and should be treated as experimental until schema setup, connection configuration, and integration are documented and tested.
+
+## Known Limitations
+
+These are documented from the current source and project notes:
+
+- `Release x64` is the expected build target with the current dependency layout.
+- Transaction database functionality is incomplete and transaction-focused.
+- The transaction hash for witness transactions is known to be incorrect in the current implementation because the hash should be generated without the SegWit marker/flag and witness data.
+- Runtime memory usage can be high because parsed blocks and transactions are copied and kept in memory.
+- Project structure still needs cleanup: the solution lives under `src/btc-parser` and only the database code is split into a separate subdirectory.
+- There is no automated test suite in the current repository.
+
+## Development Notes
+
+Useful implementation areas:
+
+- `BitcoinReader` handles binary reading and optional XOR de-obfuscation.
+- `BlockFileParser` iterates over all blocks in a block file.
+- `SingleBlockParser` parses one block from the reader.
+- `BlockHeaderParser` parses the 80-byte Bitcoin block header.
+- `TransactionParser` parses transaction inputs, outputs, SegWit data, lock time, and transaction hash metadata.
+- `TransactionScriptParser` recognizes common Bitcoin script templates and extracts address-like values.
+- `BlockPrinter` and `JsonUtils` serialize parsed data to text or JSON.
+- `Logger` wraps `spdlog` logging.
 
 ## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+- Fix SegWit transaction hash calculation.
+- Reduce memory copying and support streaming output for large block files.
+- Add tests with deterministic block fixtures.
+- Document and stabilize PostgreSQL schema and import flow.
+- Normalize project layout and build configurations.
+- Add CI for `Release x64` builds.
+- Add command-line options for output format, XOR mode, and single-file parsing.
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+MIT License. See `LICENSE`.
